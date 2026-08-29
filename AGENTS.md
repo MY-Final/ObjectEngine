@@ -7,7 +7,7 @@
 - 技术栈：Spring Boot 3.5.14（parent 统一管理版本），Java 17，Lombok。
 - 包路径：`com.myfinal.objectengine`，主类 `ObjectEngineApplication`。
 - 数据层：MyBatis-Plus 3.5.8（`mybatis-plus-spring-boot3-starter`）+ MySQL 8 + HikariCP。
-- 工作流：Flowable 7.2.0（`flowable-spring-boot-starter`），`flowable.database-schema-update: false` 不自动建表；更换数据库时先手动执行 Flowable 建表脚本，或临时改 true 建完再改回 false。
+- 工作流：Flowable 7.2.0 已暂时停用（2026-08-29，pom 依赖与 application.yaml 的 flowable 配置段均已注释）。恢复时取消注释即可，`flowable.database-catalog` 配置必须保留（共享实例跨库误判问题）。
 - Flowable 必须配置 `flowable.database-catalog: object_engine`：共享 MySQL 实例上其他库也有 ACT_ 表，不限定 catalog 时 Flowable 判断表存在与否会跨库误判，导致空库上走错误的升级路径而启动失败。
 - 其他依赖：springdoc-openapi 2.8.5（Swagger UI）、fastjson2、hutool-all、nacos-client。
 - 远程仓库：`https://github.com/MY-Final/ObjectEngine.git`，主分支 `main`。

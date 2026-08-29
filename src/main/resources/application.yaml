@@ -17,15 +17,15 @@ spring:
 server:
   port: 8080
 
-# Flowable 各引擎共用该开关：false 时不自动建/改表，要求库中已存在 Flowable 表
-# （object_engine 库的 ACT_* 等框架表已于 2026-08-29 初始化完成）。
-# 更换新数据库时先手动执行建表脚本，或临时改为 true 由框架建完再改回 false。
-flowable:
-  database-schema-update: false
-  # 共享 MySQL 实例上其他库（如老项目 flowable-demo）也有 ACT_ 表，
-  # Flowable 判断表是否存在时 catalog 为 null 会跨库扫描导致误判「表已存在」而走升级路径，
-  # 必须限定到本库。
-  database-catalog: object_engine
+## Flowable 各引擎共用该开关：false 时不自动建/改表，要求库中已存在 Flowable 表
+## （object_engine 库的 ACT_* 等框架表已于 2026-08-29 初始化完成）。
+## 更换新数据库时先手动执行建表脚本，或临时改为 true 由框架建完再改回 false。
+#flowable:
+#  database-schema-update: false
+#  # 共享 MySQL 实例上其他库（如老项目 flowable-demo）也有 ACT_ 表，
+#  # Flowable 判断表是否存在时 catalog 为 null 会跨库扫描导致误判「表已存在」而走升级路径，
+#  # 必须限定到本库。
+#  database-catalog: object_engine
 
 logging:
   level:
