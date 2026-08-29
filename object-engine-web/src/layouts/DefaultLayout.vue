@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { HomeFilled, Search, Setting, UserFilled } from '@element-plus/icons-vue'
-import * as ElementPlusIcons from '@element-plus/icons-vue'
-import type { Component } from 'vue'
-import { getMenuTree } from '@/api/menu'
+import { Expand, Fold, HomeFilled, Search, Setting, UserFilled } from '@element-plus/icons-vue'
 import type { MenuTreeItem } from '@/types/menu'
 import { useAppStore } from '@/stores/app'
+import { resolveIcon } from '@/utils/icon'
 
 const route = useRoute()
 const router = useRouter()
 const appStore = useAppStore()
 
 const keyword = ref('')
-const menuTree = ref<MenuTreeItem[]>([])
+
+/** 启动时拉取一次导航菜单；菜单管理页变更后会调用 store 重新加载 */
+void appStore.loadMenus()
 
 /** 当前是否处于后台区（/admin/* 路由）：前台与后台各自只显示本区菜单 */
 const isAdminZone = computed(() => route.path.startsWith('/admin'))
@@ -42,20 +42,9 @@ function filterByZone(items: MenuTreeItem[], admin: boolean): MenuTreeItem[] {
   return result
 }
 
-async function loadMenus() {
-  try {
-    menuTree.value = await getMenuTree()
-  } catch {
-    // 菜单接口不可用时侧边栏仅显示静态项
-    menuTree.value = []
-  }
-}
-
-void loadMenus()
-
 /** 先按关键词过滤，再按当前区（前台/后台）过滤 */
 const filteredTree = computed(() =>
-  filterByZone(filterMenuTree(menuTree.value, keyword.value.trim()), isAdminZone.value),
+  filterByZone(filterMenuTree(appStore.menuTree, keyword.value.trim()), isAdminZone.value),
 )
 
 function filterMenuTree(items: MenuTreeItem[], keyword: string): MenuTreeItem[] {
@@ -68,12 +57,6 @@ function filterMenuTree(items: MenuTreeItem[], keyword: string): MenuTreeItem[] 
     }
   }
   return result
-}
-
-/** 菜单 icon 存的是 Element Plus 图标名，按名解析，解析不到就不显示 */
-function resolveIcon(name?: string | null): Component | undefined {
-  if (!name) return undefined
-  return (ElementPlusIcons as unknown as Record<string, Component | undefined>)[name]
 }
 
 function go(menu: MenuTreeItem) {
@@ -116,8 +99,8 @@ function go(menu: MenuTreeItem) {
             clearable
           />
           <el-icon class="collapse-toggle" @click="appStore.toggleSidebar">
-            <component :is="ElementPlusIcons.Expand" v-if="appStore.sidebarCollapsed" />
-            <component :is="ElementPlusIcons.Fold" v-else />
+            <Expand v-if="appStore.sidebarCollapsed" />
+            <Fold v-else />
           </el-icon>
         </div>
 

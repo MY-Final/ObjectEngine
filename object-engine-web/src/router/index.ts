@@ -47,6 +47,12 @@ const router = createRouter({
           component: () => import('@/views/object/layout.vue'),
           meta: { title: '布局配置' },
         },
+        {
+          path: 'admin/menus',
+          name: 'menu-list',
+          component: () => import('@/views/menu/index.vue'),
+          meta: { title: '菜单管理' },
+        },
         // 旧地址兼容重定向（书签 / 未更新的菜单数据），redirect 字符串会自动带上路由参数
         { path: 'objects', redirect: '/admin/objects' },
         { path: 'objects/:apiName', redirect: '/admin/objects/:apiName' },
