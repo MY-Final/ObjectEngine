@@ -2,7 +2,7 @@
 import { h, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { deleteObject, listObjects } from '@/api/object'
+import { deleteObject, listObjects, updateObject } from '@/api/object'
 import type { CustomObject } from '@/types/object'
 import ObjectFormDialog from './components/ObjectFormDialog.vue'
 
@@ -43,6 +43,23 @@ function handleReset() {
 function handlePageChange(page: number) {
   query.page = page
   void load()
+}
+
+/** 行内启停：更新请求字段均可选，从行数据带全量字段提交，失败回弹开关 */
+async function handleStatusChange(row: CustomObject) {
+  try {
+    await updateObject(row.apiName, {
+      objectName: row.objectName,
+      description: row.description,
+      remark: row.remark,
+      icon: row.icon,
+      sort: row.sort,
+      status: row.status,
+    })
+    ElMessage.success(row.status === 1 ? '已启用' : '已停用')
+  } catch {
+    row.status = row.status === 1 ? 0 : 1
+  }
 }
 
 onMounted(() => {
@@ -129,9 +146,12 @@ async function handleDelete(row: CustomObject) {
       <el-table-column prop="description" label="描述" min-width="160" show-overflow-tooltip />
       <el-table-column label="状态" width="90" align="center">
         <template #default="{ row }">
-          <el-tag :type="row.status === 1 ? 'success' : 'info'">
-            {{ row.status === 1 ? '启用' : '停用' }}
-          </el-tag>
+          <el-switch
+            v-model="row.status"
+            :active-value="1"
+            :inactive-value="0"
+            @change="handleStatusChange(row)"
+          />
         </template>
       </el-table-column>
       <el-table-column prop="sort" label="排序" width="70" align="center" />
