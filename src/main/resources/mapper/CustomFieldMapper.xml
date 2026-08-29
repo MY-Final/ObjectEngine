@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.myfinal.objectengine.mapper.CustomFieldMapper">
+
+    <resultMap id="BaseResultMap" type="com.myfinal.objectengine.domain.CustomField">
+            <id property="id" column="id" />
+            <result property="objectId" column="object_id" />
+            <result property="apiName" column="api_name" />
+            <result property="fieldName" column="field_name" />
+            <result property="fieldType" column="field_type" />
+            <result property="description" column="description" />
+            <result property="remark" column="remark" />
+            <result property="requiredFlag" column="required_flag" />
+            <result property="uniqueFlag" column="unique_flag" />
+            <result property="searchableFlag" column="searchable_flag" />
+            <result property="sortableFlag" column="sortable_flag" />
+            <result property="sort" column="sort" />
+            <result property="defaultValue" column="default_value" />
+            <result property="configJson" column="config_json" />
+            <result property="status" column="status" />
+            <result property="createdBy" column="created_by" />
+            <result property="updatedBy" column="updated_by" />
+            <result property="createdAt" column="created_at" />
+            <result property="updatedAt" column="updated_at" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,object_id,api_name,field_name,field_type,description,
+        remark,required_flag,unique_flag,searchable_flag,sortable_flag,
+        sort,default_value,config_json,status,created_by,
+        updated_by,created_at,updated_at
+    </sql>
+</mapper>

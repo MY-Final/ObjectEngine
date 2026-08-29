@@ -24,6 +24,7 @@
 
 - 连接信息在 `src/main/resources/application.yaml`：`jdbc:mysql://192.168.2.9:33306/object`，账号 root/root（内网开发库）。
 - ORM 用 MyBatis-Plus；不要引入会自动改表结构的配置（如 JPA `ddl-auto: update`），也不要让 agent 直接执行 DDL。建表/改表写 SQL 脚本交给用户执行。
+- Service 层基类用 MyBatis-Plus 3.5.9+ 的新 API：接口继承 `com.baomidou.mybatisplus.extension.repository.IRepository<T>`，实现继承 `com.baomidou.mybatisplus.spring.repository.CrudRepository<M, T>`；老的 `IService`/`ServiceImpl` 自 3.5.9 起已移除，禁止使用。
 - URL 中的 `allowPublicKeyRetrieval=true` 和 `serverTimezone=Asia/Shanghai` 是 MySQL 8 认证与时区所需参数，不要删除。
 
 ## 团队规范（必读）
