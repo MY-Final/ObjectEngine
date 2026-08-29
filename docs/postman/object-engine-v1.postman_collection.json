@@ -1,0 +1,627 @@
+{
+  "info": {
+    "_postman_id": "b7e6a1c2-3d4e-4f50-9a1b-2c3d4e5f6070",
+    "name": "Object Engine V1",
+    "description": "Object Engine V1 API 验收集合，按文件夹顺序从上往下执行。前置条件：./mvnw spring-boot:run 启动服务（默认 8080 端口）。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "recordId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "01 对象 Object API",
+      "item": [
+        {
+          "name": "创建对象 project__c（应 200，返回 id）",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apiName\": \"project__c\",\n  \"objectName\": \"项目\",\n  \"description\": \"项目管理对象\",\n  \"remark\": \"项目基础信息\",\n  \"icon\": \"project\",\n  \"sort\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-objects",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "custom-objects"]
+            },
+            "description": "成功后 data 里返回 id。apiName 全局唯一，创建后不可修改。"
+          },
+          "response": []
+        },
+        {
+          "name": "查询对象列表（keyword 搜索）",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-objects?page=1&pageSize=20&keyword=项目",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "custom-objects"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "20" },
+                { "key": "keyword", "value": "项目" }
+              ]
+            },
+            "description": "keyword 匹配对象名称或 apiName，可清空试全部。"
+          },
+          "response": []
+        },
+        {
+          "name": "查询对象详情（应 200）",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-objects/project__c",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "custom-objects", "project__c"]
+            },
+            "description": "把 project__c 换成不存在的名字（如 xxx__c）应返回 404。"
+          },
+          "response": []
+        },
+        {
+          "name": "修改对象（应 200，apiName 不允许改）",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"objectName\": \"项目管理\",\n  \"description\": \"项目管理对象\",\n  \"remark\": \"修改后的备注\",\n  \"icon\": \"project\",\n  \"sort\": 2,\n  \"status\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-objects/project__c",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "custom-objects", "project__c"]
+            },
+            "description": "请求体里即使写了 apiName 也不会被修改。"
+          },
+          "response": []
+        },
+        {
+          "name": "重复 apiName 创建（应 400）",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apiName\": \"project__c\",\n  \"objectName\": \"另一个项目\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-objects",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "custom-objects"]
+            },
+            "description": "预期：{ \"code\": 400, \"message\": \"对象API名称已存在：project__c\" }"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 字段 Field API",
+      "item": [
+        {
+          "name": "创建字段 name/TEXT（必填）",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apiName\": \"name\",\n  \"fieldName\": \"项目名称\",\n  \"fieldType\": \"TEXT\",\n  \"description\": \"项目名称\",\n  \"remark\": \"\",\n  \"requiredFlag\": 1,\n  \"uniqueFlag\": 0,\n  \"searchableFlag\": 1,\n  \"sortableFlag\": 1,\n  \"sort\": 1,\n  \"defaultValue\": null,\n  \"configJson\": null\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-objects/project__c/fields",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "custom-objects", "project__c", "fields"]
+            },
+            "description": "对象不存在时返回 404。"
+          },
+          "response": []
+        },
+        {
+          "name": "创建字段 amount/MONEY",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apiName\": \"amount\",\n  \"fieldName\": \"项目金额\",\n  \"fieldType\": \"MONEY\",\n  \"description\": \"项目金额\",\n  \"requiredFlag\": 0,\n  \"searchableFlag\": 1,\n  \"sortableFlag\": 1,\n  \"sort\": 2\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-objects/project__c/fields",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "custom-objects", "project__c", "fields"]
+            },
+            "description": "requiredFlag 等不传时默认 0。"
+          },
+          "response": []
+        },
+        {
+          "name": "创建字段 status/SELECT（含 options）",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apiName\": \"status\",\n  \"fieldName\": \"项目状态\",\n  \"fieldType\": \"SELECT\",\n  \"requiredFlag\": 1,\n  \"sort\": 3,\n  \"configJson\": {\n    \"options\": [\n      { \"label\": \"待处理\", \"value\": \"pending\" },\n      { \"label\": \"进行中\", \"value\": \"processing\" },\n      { \"label\": \"已完成\", \"value\": \"completed\" }\n    ]\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-objects/project__c/fields",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "custom-objects", "project__c", "fields"]
+            },
+            "description": "SELECT 必须配置 options，否则 400。"
+          },
+          "response": []
+        },
+        {
+          "name": "创建字段 start_date/DATE",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apiName\": \"start_date\",\n  \"fieldName\": \"开始日期\",\n  \"fieldType\": \"DATE\",\n  \"requiredFlag\": 0,\n  \"sort\": 4\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-objects/project__c/fields",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "custom-objects", "project__c", "fields"]
+            },
+            "description": "DATE 值格式要求 yyyy-MM-dd。"
+          },
+          "response": []
+        },
+        {
+          "name": "重复字段 apiName（应 400）",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apiName\": \"name\",\n  \"fieldName\": \"重复字段\",\n  \"fieldType\": \"TEXT\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-objects/project__c/fields",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "custom-objects", "project__c", "fields"]
+            },
+            "description": "同一对象内字段 apiName 唯一。预期：字段API名称已存在：name"
+          },
+          "response": []
+        },
+        {
+          "name": "非法字段类型（应 400）",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apiName\": \"bad\",\n  \"fieldName\": \"坏类型\",\n  \"fieldType\": \"STRING\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-objects/project__c/fields",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "custom-objects", "project__c", "fields"]
+            },
+            "description": "V1 只支持 TEXT/TEXTAREA/NUMBER/MONEY/DATE/SELECT。预期：字段类型不合法：STRING"
+          },
+          "response": []
+        },
+        {
+          "name": "SELECT 未配 options（应 400）",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apiName\": \"empty_select\",\n  \"fieldName\": \"空选项\",\n  \"fieldType\": \"SELECT\",\n  \"configJson\": { \"options\": [] }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-objects/project__c/fields",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "custom-objects", "project__c", "fields"]
+            },
+            "description": "预期：字段【空选项】必须配置 options 选项"
+          },
+          "response": []
+        },
+        {
+          "name": "查询字段列表（sort ASC）",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-objects/project__c/fields",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "custom-objects", "project__c", "fields"]
+            },
+            "description": "应返回 4 个字段，顺序 name → amount → status → start_date。"
+          },
+          "response": []
+        },
+        {
+          "name": "修改字段（fieldType 不可改）",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fieldName\": \"项目名称\",\n  \"remark\": \"项目名称备注\",\n  \"requiredFlag\": 1,\n  \"sort\": 1,\n  \"status\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-objects/project__c/fields/name",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "custom-objects", "project__c", "fields", "name"]
+            },
+            "description": "请求体里即使写 fieldType/apiName 也不会被修改。"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 Metadata API",
+      "item": [
+        {
+          "name": "获取完整 Metadata（前端唯一依赖）",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/objects/project__c/metadata",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "objects", "project__c", "metadata"]
+            },
+            "description": "返回 { object, fields }，fields 按 sort ASC，SELECT 的 configJson.options 应为 JSON 数组而不是字符串。对象不存在应 404。"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 Record API",
+      "item": [
+        {
+          "name": "创建记录（应 200，自动记录 recordId）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('code=200', () => pm.expect(json.code).to.eql(200));",
+                  "if (json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('recordId', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"测试项目\",\n  \"amount\": 100000,\n  \"status\": \"processing\",\n  \"start_date\": \"2026-08-29\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/objects/project__c/records",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "objects", "project__c", "records"]
+            },
+            "description": "请求体直接是 fieldApiName -> value，不需要包一层 data。"
+          },
+          "response": []
+        },
+        {
+          "name": "创建记录-未知字段（应 400）",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"unknown_field\": \"xxx\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/objects/project__c/records",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "objects", "project__c", "records"]
+            },
+            "description": "预期：字段【unknown_field】不存在"
+          },
+          "response": []
+        },
+        {
+          "name": "创建记录-缺必填（应 400）",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 1,\n  \"status\": \"pending\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/objects/project__c/records",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "objects", "project__c", "records"]
+            },
+            "description": "预期：字段【项目名称】不能为空"
+          },
+          "response": []
+        },
+        {
+          "name": "创建记录-MONEY 传字符串（应 400）",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"测试项目\",\n  \"amount\": \"abc\",\n  \"status\": \"pending\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/objects/project__c/records",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "objects", "project__c", "records"]
+            },
+            "description": "预期：字段【项目金额】必须为数字"
+          },
+          "response": []
+        },
+        {
+          "name": "创建记录-SELECT 非法选项（应 400）",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"测试项目\",\n  \"status\": \"hello\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/objects/project__c/records",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "objects", "project__c", "records"]
+            },
+            "description": "预期：字段【项目状态】的值不在选项范围内"
+          },
+          "response": []
+        },
+        {
+          "name": "创建记录-DATE 格式错误（应 400）",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"测试项目\",\n  \"status\": \"pending\",\n  \"start_date\": \"2026/08/29\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/objects/project__c/records",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "objects", "project__c", "records"]
+            },
+            "description": "DATE 只认 yyyy-MM-dd。预期：字段【开始日期】必须为日期（yyyy-MM-dd）"
+          },
+          "response": []
+        },
+        {
+          "name": "查询记录列表（分页）",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/objects/project__c/records?page=1&pageSize=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "objects", "project__c", "records"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "20" }
+              ]
+            },
+            "description": "data.records 里每条含 id/data/createdAt/updatedAt，data 是 JSON 对象。"
+          },
+          "response": []
+        },
+        {
+          "name": "查询单条记录（recordId 自动带入）",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/objects/project__c/records/{{recordId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "objects", "project__c", "records", "{{recordId}}"]
+            },
+            "description": "recordId 由『创建记录』的 Tests 脚本自动写入集合变量；也可手动改。不存在的 id 应 404。"
+          },
+          "response": []
+        },
+        {
+          "name": "删除记录（应 200，之后查询应 404）",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/objects/project__c/records/{{recordId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "objects", "project__c", "records", "{{recordId}}"]
+            },
+            "description": "删除后可再点『查询单条记录』验证 404。"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 扩展验收 customer__c（不改代码新增动态对象）",
+      "item": [
+        {
+          "name": "创建对象 customer__c",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apiName\": \"customer__c\",\n  \"objectName\": \"客户\",\n  \"description\": \"客户管理对象\",\n  \"sort\": 2\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-objects",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "custom-objects"]
+            },
+            "description": "验证核心目标：不修改任何代码，仅靠 API 就能得到新的动态对象。"
+          },
+          "response": []
+        },
+        {
+          "name": "创建字段 name/TEXT（必填）",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apiName\": \"name\",\n  \"fieldName\": \"客户名称\",\n  \"fieldType\": \"TEXT\",\n  \"requiredFlag\": 1,\n  \"sort\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-objects/customer__c/fields",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "custom-objects", "customer__c", "fields"]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "创建字段 phone/TEXT",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apiName\": \"phone\",\n  \"fieldName\": \"客户电话\",\n  \"fieldType\": \"TEXT\",\n  \"sort\": 2\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-objects/customer__c/fields",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "custom-objects", "customer__c", "fields"]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "创建字段 level/SELECT",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apiName\": \"level\",\n  \"fieldName\": \"客户等级\",\n  \"fieldType\": \"SELECT\",\n  \"requiredFlag\": 1,\n  \"sort\": 3,\n  \"configJson\": {\n    \"options\": [\n      { \"label\": \"普通\", \"value\": \"normal\" },\n      { \"label\": \"VIP\", \"value\": \"vip\" }\n    ]\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-objects/customer__c/fields",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "custom-objects", "customer__c", "fields"]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "获取 customer__c Metadata",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/objects/customer__c/metadata",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "objects", "customer__c", "metadata"]
+            },
+            "description": "应返回客户对象 + 3 个字段。"
+          },
+          "response": []
+        },
+        {
+          "name": "创建客户记录",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"客户A\",\n  \"phone\": \"13800000000\",\n  \"level\": \"vip\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/objects/customer__c/records",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "objects", "customer__c", "records"]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "删除对象 customer__c（清理，事务级联）",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-objects/customer__c",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "custom-objects", "customer__c"]
+            },
+            "description": "级联删除 customer__c 的字段与记录。"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "99 清理（最后执行）",
+      "item": [
+        {
+          "name": "删除对象 project__c（事务级联，之后 Metadata 应 404）",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-objects/project__c",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "custom-objects", "project__c"]
+            },
+            "description": "删除后分别请求 Metadata 与对象详情应 404。若想保留数据给前端联调，请勿执行本请求。"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
