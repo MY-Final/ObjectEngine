@@ -1,0 +1,41 @@
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family:
+    'Helvetica Neue',
+    Helvetica,
+    'PingFang SC',
+    'Hiragino Sans GB',
+    'Microsoft YaHei',
+    Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background-color: #f5f7fa;
+}
+
+.page {
+  padding: 16px;
+}
+
+.page-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.page-toolbar h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.page-pagination {
+  margin-top: 16px;
+  justify-content: flex-end;
+}
