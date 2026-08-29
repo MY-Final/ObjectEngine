@@ -20,6 +20,12 @@ public class ApiResponse<T> {
         return response;
     }
 
+    public static <T> ApiResponse<T> ok(T data, String message) {
+        ApiResponse<T> response = ok(data);
+        response.setMessage(message);
+        return response;
+    }
+
     public static <T> ApiResponse<T> ok() {
         return ok(null);
     }
