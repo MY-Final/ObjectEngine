@@ -1,29 +1,137 @@
 <script setup lang="ts">
-import { useRoute } from 'vue-router'
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { HomeFilled, Search, UserFilled } from '@element-plus/icons-vue'
+import * as ElementPlusIcons from '@element-plus/icons-vue'
+import type { Component } from 'vue'
+import { getMenuTree } from '@/api/menu'
+import type { MenuTreeItem } from '@/types/menu'
 import { useAppStore } from '@/stores/app'
 
 const route = useRoute()
+const router = useRouter()
 const appStore = useAppStore()
+
+const keyword = ref('')
+const menuTree = ref<MenuTreeItem[]>([])
+
+async function loadMenus() {
+  try {
+    menuTree.value = await getMenuTree()
+  } catch {
+    // 菜单接口不可用时侧边栏仅显示静态项
+    menuTree.value = []
+  }
+}
+
+void loadMenus()
+
+/** 按关键词过滤：名称匹配的节点保留，父节点有匹配子节点时也保留 */
+const filteredTree = computed(() => filterMenuTree(menuTree.value, keyword.value.trim()))
+
+function filterMenuTree(items: MenuTreeItem[], keyword: string): MenuTreeItem[] {
+  if (!keyword) return items
+  const result: MenuTreeItem[] = []
+  for (const item of items) {
+    const children = filterMenuTree(item.children ?? [], keyword)
+    if (item.menuName.includes(keyword) || children.length > 0) {
+      result.push({ ...item, children })
+    }
+  }
+  return result
+}
+
+/** 菜单 icon 存的是 Element Plus 图标名，按名解析，解析不到就不显示 */
+function resolveIcon(name?: string | null): Component | undefined {
+  if (!name) return undefined
+  return (ElementPlusIcons as unknown as Record<string, Component | undefined>)[name]
+}
+
+function go(menu: MenuTreeItem) {
+  const path = menu.routePath ?? ''
+  if (menu.menuType === 'LINK' && /^https?:\/\//.test(path)) {
+    window.open(path, menu.target === '_blank' ? '_blank' : '_self')
+    return
+  }
+  if (path) router.push(path)
+}
 </script>
 
 <template>
-  <el-container class="layout">
-    <el-aside :width="appStore.sidebarCollapsed ? '64px' : '200px'" class="layout-aside">
-      <div class="layout-logo">Object Engine</div>
-      <el-menu :default-active="route.path" router :collapse="appStore.sidebarCollapsed" class="layout-menu">
-        <el-menu-item index="/dashboard">首页</el-menu-item>
-        <el-menu-item index="/objects">对象管理</el-menu-item>
-      </el-menu>
-    </el-aside>
+  <el-container class="app-shell">
+    <el-header class="app-header" height="50px">
+      <div class="brand">
+        <span class="brand-mark">OE</span>
+        <span class="brand-name">Object Engine</span>
+      </div>
+      <div class="header-right">
+        <el-avatar :size="30" :icon="UserFilled" class="header-avatar" />
+      </div>
+    </el-header>
 
-    <el-container>
-      <el-header class="layout-header">
-        <el-button text @click="appStore.toggleSidebar">
-          {{ appStore.sidebarCollapsed ? '展开' : '收起' }}
-        </el-button>
-        <span class="layout-title">{{ route.meta.title }}</span>
-      </el-header>
-      <el-main class="layout-main">
+    <el-container class="app-body">
+      <el-aside :width="appStore.sidebarCollapsed ? '64px' : '220px'" class="app-aside">
+        <div class="sidebar-tools" :class="{ 'is-collapsed': appStore.sidebarCollapsed }">
+          <el-input
+            v-if="!appStore.sidebarCollapsed"
+            v-model="keyword"
+            class="sidebar-search"
+            :prefix-icon="Search"
+            placeholder="搜索菜单..."
+            size="small"
+            clearable
+          />
+          <el-icon class="collapse-toggle" @click="appStore.toggleSidebar">
+            <component :is="ElementPlusIcons.Expand" v-if="appStore.sidebarCollapsed" />
+            <component :is="ElementPlusIcons.Fold" v-else />
+          </el-icon>
+        </div>
+
+        <el-menu
+          class="sidebar-menu"
+          :class="{ 'is-collapsed': appStore.sidebarCollapsed }"
+          :default-active="route.path"
+          :collapse="appStore.sidebarCollapsed"
+          :collapse-transition="false"
+        >
+          <el-menu-item index="/dashboard" @click="router.push('/dashboard')">
+            <el-icon><HomeFilled /></el-icon>
+            <template #title>首页</template>
+          </el-menu-item>
+
+          <template v-for="menu in filteredTree" :key="menu.id">
+            <el-sub-menu v-if="menu.children.length > 0" :index="`dir-${menu.id}`">
+              <template #title>
+                <el-icon v-if="resolveIcon(menu.icon)">
+                  <component :is="resolveIcon(menu.icon)" />
+                </el-icon>
+                <span>{{ menu.menuName }}</span>
+              </template>
+              <el-menu-item
+                v-for="child in menu.children"
+                :key="child.id"
+                :index="child.routePath || `menu-${child.id}`"
+                @click="go(child)"
+              >
+                {{ child.menuName }}
+              </el-menu-item>
+            </el-sub-menu>
+
+            <el-menu-item
+              v-else
+              :index="menu.routePath || `menu-${menu.id}`"
+              @click="go(menu)"
+            >
+              <el-icon v-if="resolveIcon(menu.icon)">
+                <component :is="resolveIcon(menu.icon)" />
+              </el-icon>
+              <template #title>{{ menu.menuName }}</template>
+            </el-menu-item>
+          </template>
+        </el-menu>
+      </el-aside>
+
+      <el-main class="app-main">
         <RouterView />
       </el-main>
     </el-container>
@@ -31,46 +139,130 @@ const appStore = useAppStore()
 </template>
 
 <style scoped>
-.layout {
+.app-shell {
   height: 100vh;
 }
 
-.layout-aside {
+/* 顶栏：白底、底部细分隔线，右侧预留头像位 */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   background-color: #fff;
-  border-right: 1px solid #e6e6e6;
-  transition: width 0.2s;
+  border-bottom: 1px solid #e4e7ed;
+  padding: 0 16px;
 }
 
-.layout-logo {
-  height: 56px;
+.brand {
   display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-mark {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background-color: var(--el-color-primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.brand-name {
   font-size: 16px;
-  border-bottom: 1px solid #e6e6e6;
-  white-space: nowrap;
-  overflow: hidden;
+  font-weight: 600;
+  color: #1f2d3d;
+  letter-spacing: 0.5px;
 }
 
-.layout-menu {
-  border-right: none;
+.header-avatar {
+  background-color: var(--el-color-primary-light-8);
+  color: var(--el-color-primary);
+  cursor: pointer;
 }
 
-.layout-header {
+.app-body {
+  height: calc(100vh - 50px);
+}
+
+/* 侧边栏：白底黑字，选中蓝色高亮 */
+.app-aside {
+  background-color: #fff;
+  border-right: 1px solid #e4e7ed;
+  transition: width 0.2s;
+  overflow-x: hidden;
+}
+
+.sidebar-tools {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background-color: #fff;
-  border-bottom: 1px solid #e6e6e6;
+  gap: 6px;
+  padding: 10px 10px 6px;
 }
 
-.layout-title {
+/* 折叠态：隐藏搜索后按钮与菜单图标同轴居中（aside 宽 64px，与折叠菜单项对齐） */
+.sidebar-tools.is-collapsed {
+  justify-content: center;
+  padding: 10px 0 6px;
+}
+
+.collapse-toggle {
+  flex-shrink: 0;
+  color: #909399;
+  cursor: pointer;
   font-size: 16px;
-  font-weight: 600;
 }
 
-.layout-main {
+.collapse-toggle:hover {
+  color: var(--el-color-primary);
+}
+
+.sidebar-menu {
+  border-right: none;
+  padding: 4px 8px;
+}
+
+/* 折叠态去掉水平 padding，并统一折叠宽度为 64px，菜单图标与顶部折叠按钮同轴居中 */
+.sidebar-menu.is-collapsed {
+  padding: 4px 0;
+  --el-menu-collapse-width: 64px;
+}
+
+.sidebar-menu :deep(.el-menu-item),
+.sidebar-menu :deep(.el-sub-menu__title) {
+  color: #303133;
+  border-radius: 6px;
+  margin-bottom: 2px;
+  height: 40px;
+}
+
+.sidebar-menu :deep(.el-menu-item:hover),
+.sidebar-menu :deep(.el-sub-menu__title:hover) {
+  background-color: #f5f7fa;
+  color: #303133;
+}
+
+.sidebar-menu :deep(.el-menu-item.is-active) {
+  background-color: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+  font-weight: 500;
+}
+
+.sidebar-menu :deep(.el-sub-menu.is-active > .el-sub-menu__title) {
+  color: var(--el-color-primary);
+}
+
+.sidebar-menu :deep(.el-sub-menu .el-menu) {
+  background-color: transparent;
+}
+
+.app-main {
+  background-color: #f5f7fa;
   padding: 0;
+  overflow: auto;
 }
 </style>

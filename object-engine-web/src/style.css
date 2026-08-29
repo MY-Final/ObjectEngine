@@ -1,3 +1,14 @@
+/* 蓝色调主题（参考销售易），覆盖 Element Plus 主色 */
+:root {
+  --el-color-primary: #2e6bef;
+  --el-color-primary-light-3: #5c8ff4;
+  --el-color-primary-light-5: #8bb1f7;
+  --el-color-primary-light-7: #bad4fa;
+  --el-color-primary-light-8: #d3e3fc;
+  --el-color-primary-light-9: #ecf2fe;
+  --el-color-primary-dark-2: #2556c9;
+}
+
 html,
 body,
 #app {
