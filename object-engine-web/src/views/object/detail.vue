@@ -29,6 +29,10 @@ function goFields() {
   router.push(`/objects/${apiName}/fields`)
 }
 
+function goLayout() {
+  router.push(`/objects/${apiName}/layout`)
+}
+
 const dialogVisible = ref(false)
 
 function openEdit() {
@@ -69,6 +73,7 @@ function handleSaved() {
       </el-descriptions>
       <div class="detail-actions">
         <el-button type="primary" @click="goFields">字段配置</el-button>
+        <el-button type="primary" plain @click="goLayout">布局配置</el-button>
         <el-button @click="openEdit">编辑</el-button>
       </div>
     </el-card>

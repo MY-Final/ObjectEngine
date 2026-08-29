@@ -34,6 +34,12 @@ const router = createRouter({
           meta: { title: '字段配置' },
         },
         {
+          path: 'objects/:apiName/layout',
+          name: 'object-layout',
+          component: () => import('@/views/object/layout.vue'),
+          meta: { title: '布局配置' },
+        },
+        {
           path: 'custom/:apiName',
           name: 'custom-object',
           component: () => import('@/views/custom/object.vue'),
