@@ -31,7 +31,7 @@ const recordsLoading = ref(false)
 const records = ref<CustomRecord[]>([])
 const total = ref(0)
 const page = ref(1)
-const pageSize = 20
+const pageSize = ref(20)
 
 async function loadMetadata() {
   metadataLoading.value = true
@@ -54,7 +54,7 @@ async function loadMetadata() {
 async function loadRecords() {
   recordsLoading.value = true
   try {
-    const result = await listRecords(apiName.value, { page: page.value, pageSize })
+    const result = await listRecords(apiName.value, { page: page.value, pageSize: pageSize.value })
     records.value = result.records
     total.value = result.total
   } finally {
@@ -73,8 +73,12 @@ function init() {
 
 watch(apiName, init, { immediate: true })
 
-function handlePageChange(nextPage: number) {
-  page.value = nextPage
+function handlePageChange() {
+  void loadRecords()
+}
+
+function handleSizeChange() {
+  page.value = 1
   void loadRecords()
 }
 
@@ -177,11 +181,13 @@ async function handleDelete(record: CustomRecord) {
       />
 
       <el-pagination
+        v-model:current-page="page"
+        v-model:page-size="pageSize"
         class="page-pagination"
-        layout="total, prev, pager, next"
+        layout="total, sizes, prev, pager, next, jumper"
+        :page-sizes="[10, 20, 50]"
         :total="total"
-        :page-size="pageSize"
-        :current-page="page"
+        @size-change="handleSizeChange"
         @current-change="handlePageChange"
       />
 

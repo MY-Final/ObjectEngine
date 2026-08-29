@@ -40,8 +40,12 @@ function handleReset() {
   void load()
 }
 
-function handlePageChange(page: number) {
-  query.page = page
+function handlePageChange() {
+  void load()
+}
+
+function handleSizeChange() {
+  query.page = 1
   void load()
 }
 
@@ -174,11 +178,13 @@ async function handleDelete(row: CustomObject) {
     </el-table>
 
     <el-pagination
+      v-model:current-page="query.page"
+      v-model:page-size="query.pageSize"
       class="page-pagination"
-      layout="total, prev, pager, next"
+      layout="total, sizes, prev, pager, next, jumper"
+      :page-sizes="[10, 20, 50]"
       :total="total"
-      :page-size="query.pageSize"
-      :current-page="query.page"
+      @size-change="handleSizeChange"
       @current-change="handlePageChange"
     />
 
