@@ -33,7 +33,7 @@ onMounted(() => {
 })
 
 function goBackToObject() {
-  router.push(`/objects/${apiName}`)
+  router.push(`/admin/objects/${apiName}`)
 }
 
 async function handleDelete(row: CustomField) {

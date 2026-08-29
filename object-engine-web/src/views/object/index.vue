@@ -50,11 +50,11 @@ onMounted(() => {
 })
 
 function goDetail(apiName: string) {
-  router.push(`/objects/${apiName}`)
+  router.push(`/admin/objects/${apiName}`)
 }
 
 function goFields(apiName: string) {
-  router.push(`/objects/${apiName}/fields`)
+  router.push(`/admin/objects/${apiName}/fields`)
 }
 
 const dialogVisible = ref(false)

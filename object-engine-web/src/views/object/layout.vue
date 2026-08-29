@@ -112,7 +112,7 @@ onMounted(async () => {
           对象：{{ objectName || apiName }} / API：{{ apiName }}
         </span>
       </h2>
-      <el-button @click="router.push(`/objects/${apiName}`)">返回对象</el-button>
+      <el-button @click="router.push(`/admin/objects/${apiName}`)">返回对象</el-button>
     </div>
 
     <el-tabs v-model="activeTab" @tab-change="handleTabChange">

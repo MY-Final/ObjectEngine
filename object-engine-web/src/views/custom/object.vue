@@ -147,7 +147,7 @@ async function handleDelete(record: CustomRecord) {
 
     <el-result v-else-if="notFound" icon="warning" title="对象不存在" sub-title="该对象可能已被删除">
       <template #extra>
-        <el-button type="primary" @click="router.push('/objects')">返回对象管理</el-button>
+        <el-button type="primary" @click="router.push('/admin/objects')">返回对象管理</el-button>
       </template>
     </el-result>
 

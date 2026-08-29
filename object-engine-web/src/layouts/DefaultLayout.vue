@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { HomeFilled, Search, UserFilled } from '@element-plus/icons-vue'
+import { HomeFilled, Search, Setting, UserFilled } from '@element-plus/icons-vue'
 import * as ElementPlusIcons from '@element-plus/icons-vue'
 import type { Component } from 'vue'
 import { getMenuTree } from '@/api/menu'
@@ -15,6 +15,33 @@ const appStore = useAppStore()
 const keyword = ref('')
 const menuTree = ref<MenuTreeItem[]>([])
 
+/** 当前是否处于后台区（/admin/* 路由）：前台与后台各自只显示本区菜单 */
+const isAdminZone = computed(() => route.path.startsWith('/admin'))
+
+/** 首页属于前台区：前台页面（首页 / 自定义对象页）都显示，进入后台区后隐藏；回首页走左上角品牌区 */
+const showHome = computed(() => !isAdminZone.value)
+
+/**
+ * 按区过滤菜单树：叶子菜单以 routePath 前缀归属（/admin/* 为后台菜单，其余为前台菜单），
+ * 目录跟随子菜单——子菜单全部不在本区时整个目录隐藏
+ */
+function filterByZone(items: MenuTreeItem[], admin: boolean): MenuTreeItem[] {
+  const result: MenuTreeItem[] = []
+  for (const item of items) {
+    if (item.children && item.children.length > 0) {
+      const children = filterByZone(item.children, admin)
+      if (children.length > 0) {
+        result.push({ ...item, children })
+      }
+      continue
+    }
+    if ((item.routePath ?? '').startsWith('/admin') === admin) {
+      result.push(item)
+    }
+  }
+  return result
+}
+
 async function loadMenus() {
   try {
     menuTree.value = await getMenuTree()
@@ -26,8 +53,10 @@ async function loadMenus() {
 
 void loadMenus()
 
-/** 按关键词过滤：名称匹配的节点保留，父节点有匹配子节点时也保留 */
-const filteredTree = computed(() => filterMenuTree(menuTree.value, keyword.value.trim()))
+/** 先按关键词过滤，再按当前区（前台/后台）过滤 */
+const filteredTree = computed(() =>
+  filterByZone(filterMenuTree(menuTree.value, keyword.value.trim()), isAdminZone.value),
+)
 
 function filterMenuTree(items: MenuTreeItem[], keyword: string): MenuTreeItem[] {
   if (!keyword) return items
@@ -60,11 +89,16 @@ function go(menu: MenuTreeItem) {
 <template>
   <el-container class="app-shell">
     <el-header class="app-header" height="50px">
-      <div class="brand">
+      <div class="brand" title="返回首页" @click="router.push('/dashboard')">
         <span class="brand-mark">OE</span>
         <span class="brand-name">Object Engine</span>
       </div>
       <div class="header-right">
+        <el-tooltip content="进入后台" placement="bottom">
+          <el-icon class="header-action" :size="18" @click="router.push('/admin/objects')">
+            <Setting />
+          </el-icon>
+        </el-tooltip>
         <el-avatar :size="30" :icon="UserFilled" class="header-avatar" />
       </div>
     </el-header>
@@ -94,7 +128,7 @@ function go(menu: MenuTreeItem) {
           :collapse="appStore.sidebarCollapsed"
           :collapse-transition="false"
         >
-          <el-menu-item index="/dashboard" @click="router.push('/dashboard')">
+          <el-menu-item v-if="showHome" index="/dashboard" @click="router.push('/dashboard')">
             <el-icon><HomeFilled /></el-icon>
             <template #title>首页</template>
           </el-menu-item>
@@ -157,6 +191,7 @@ function go(menu: MenuTreeItem) {
   display: flex;
   align-items: center;
   gap: 10px;
+  cursor: pointer;
 }
 
 .brand-mark {
@@ -177,6 +212,21 @@ function go(menu: MenuTreeItem) {
   font-weight: 600;
   color: #1f2d3d;
   letter-spacing: 0.5px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-action {
+  color: #606266;
+  cursor: pointer;
+}
+
+.header-action:hover {
+  color: var(--el-color-primary);
 }
 
 .header-avatar {
