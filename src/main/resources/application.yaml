@@ -17,6 +17,16 @@ spring:
 server:
   port: 8080
 
+# Flowable 各引擎共用该开关：true 表示首次启动时自动创建 ACT_* 等框架表（约 70 张）。
+# 这是团队规范「不自动改表结构」的一个例外（2026-08-29 与用户确认）：
+# Flowable 表由框架自管理，业务表的建表/改表仍走 SQL 脚本由用户执行。
+flowable:
+  database-schema-update: true
+  # 共享 MySQL 实例上其他库（如老项目 flowable-demo）也有 ACT_ 表，
+  # Flowable 判断表是否存在时 catalog 为 null 会跨库扫描导致误判「表已存在」而走升级路径，
+  # 必须限定到本库。
+  database-catalog: object_engine
+
 logging:
   level:
     com.myfinal.objectengine: debug

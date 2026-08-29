@@ -4,9 +4,12 @@
 
 ## 项目概况
 
-- 技术栈：Spring Boot 4.0.8（parent 统一管理版本），Java 17，Lombok。
+- 技术栈：Spring Boot 3.5.14（parent 统一管理版本），Java 17，Lombok。
 - 包路径：`com.myfinal.objectengine`，主类 `ObjectEngineApplication`。
-- 数据层：MyBatis-Plus 3.5.17（`mybatis-plus-spring-boot4-starter`）+ MySQL 8 + HikariCP。
+- 数据层：MyBatis-Plus 3.5.17（`mybatis-plus-spring-boot3-starter`）+ MySQL 8 + HikariCP。
+- 工作流：Flowable 7.2.0（`flowable-spring-boot-starter`），`flowable.database-schema-update: true` 允许框架首次启动自动建 ACT_* 表（见数据库节例外说明）。
+- Flowable 必须配置 `flowable.database-catalog: object_engine`：共享 MySQL 实例上其他库也有 ACT_ 表，不限定 catalog 时 Flowable 判断表存在与否会跨库误判，导致空库上走错误的升级路径而启动失败。
+- 其他依赖：springdoc-openapi 2.8.5（Swagger UI）、fastjson2、hutool-all、nacos-client。
 - 远程仓库：`https://github.com/MY-Final/ObjectEngine.git`，主分支 `main`。
 
 ## 常用命令
@@ -23,7 +26,7 @@
 ## 数据库（重要）
 
 - 连接信息在 `src/main/resources/application.yaml`：`jdbc:mysql://192.168.2.9:33306/object`，账号 root/root（内网开发库）。
-- ORM 用 MyBatis-Plus；不要引入会自动改表结构的配置（如 JPA `ddl-auto: update`），也不要让 agent 直接执行 DDL。建表/改表写 SQL 脚本交给用户执行。
+- ORM 用 MyBatis-Plus；不要引入会自动改表结构的配置（如 JPA `ddl-auto: update`），也不要让 agent 直接执行 DDL。建表/改表写 SQL 脚本交给用户执行。**例外**：Flowable 框架表（ACT_*）由 `flowable.database-schema-update: true` 自动创建，不适用本条。
 - Service 层基类用 MyBatis-Plus 3.5.9+ 的新 API：接口继承 `com.baomidou.mybatisplus.extension.repository.IRepository<T>`，实现继承 `com.baomidou.mybatisplus.spring.repository.CrudRepository<M, T>`；老的 `IService`/`ServiceImpl` 自 3.5.9 起已移除，禁止使用。
 - URL 中的 `allowPublicKeyRetrieval=true` 和 `serverTimezone=Asia/Shanghai` 是 MySQL 8 认证与时区所需参数，不要删除。
 
