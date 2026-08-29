@@ -10,6 +10,7 @@
 - 工作流：Flowable 7.2.0 已暂时停用（2026-08-29，pom 依赖与 application.yaml 的 flowable 配置段均已注释）。恢复时取消注释即可，`flowable.database-catalog` 配置必须保留（共享实例跨库误判问题）。
 - Flowable 必须配置 `flowable.database-catalog: object_engine`：共享 MySQL 实例上其他库也有 ACT_ 表，不限定 catalog 时 Flowable 判断表存在与否会跨库误判，导致空库上走错误的升级路径而启动失败。
 - 其他依赖：springdoc-openapi 2.8.5（Swagger UI）、fastjson2、hutool-all、nacos-client。
+- 前端：`object-engine-web/`，Vue 3 + TypeScript + Vite + Element Plus + Pinia，UI 组件规范见 [agents/03-frontend-elementplus.md](agents/03-frontend-elementplus.md)。
 - 远程仓库：`https://github.com/MY-Final/ObjectEngine.git`，主分支 `main`。
 
 ## 常用命令
@@ -36,6 +37,7 @@
 
 1. [agents/01-git-commit.md](agents/01-git-commit.md) — Git 提交规范：`<type>: 中文描述` + 空行 + `- ` 开头的正文，type 用 feat/fix/refactor/docs/test/build/chore/perf/ci。
 2. [agents/02-git-worktree.md](agents/02-git-worktree.md) — Git worktree 规范：worktree 建在仓库同级 `../object-engine.worktrees/` 目录，禁止嵌套在仓库内，合并后立即清理。
+3. [agents/03-frontend-elementplus.md](agents/03-frontend-elementplus.md) — 前端 UI 组件规范：统一使用 Element Plus，能用现成组件的不自己实现（不重复造轮子），动态渲染组件（`src/components/dynamic/`、`src/components/layout/`）除外。
 
 ## 其他约定
 
