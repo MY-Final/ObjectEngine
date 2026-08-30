@@ -5,6 +5,12 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
+      path: '/login',
+      name: 'login',
+      component: () => import('@/views/auth/Login.vue'),
+      meta: { title: '登录' },
+    },
+    {
       path: '/',
       component: DefaultLayout,
       redirect: '/dashboard',
@@ -68,6 +74,17 @@ const router = createRouter({
     },
     { path: '/:pathMatch(.*)*', redirect: '/dashboard' },
   ],
+})
+
+// 登录守卫：无 token 一律去登录页；已登录访问登录页则回首页
+router.beforeEach((to) => {
+  const token = localStorage.getItem('oe_token')
+  if (!token && to.path !== '/login') {
+    return { path: '/login', query: to.fullPath === '/' ? {} : { redirect: to.fullPath } }
+  }
+  if (token && to.path === '/login') {
+    return { path: '/dashboard' }
+  }
 })
 
 router.afterEach((to) => {

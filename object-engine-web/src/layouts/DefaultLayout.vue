@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Expand, Fold, HomeFilled, Search, Setting, UserFilled } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { Expand, Fold, HomeFilled, Search, Setting, SwitchButton, UserFilled } from '@element-plus/icons-vue'
+import { logout } from '@/api/auth'
+import { clearToken } from '@/constants/auth'
 import type { MenuTreeItem } from '@/types/menu'
 import { useAppStore } from '@/stores/app'
 import { resolveIcon } from '@/utils/icon'
@@ -59,6 +62,18 @@ function filterMenuTree(items: MenuTreeItem[], keyword: string): MenuTreeItem[] 
   return result
 }
 
+async function handleUserCommand(command: string) {
+  if (command !== 'logout') return
+  try {
+    await logout()
+  } catch {
+    // 接口失败也照常清理本地登录态
+  }
+  clearToken()
+  ElMessage.success('已退出登录')
+  await router.push('/login')
+}
+
 function go(menu: MenuTreeItem) {
   const path = menu.routePath ?? ''
   if (menu.menuType === 'LINK' && /^https?:\/\//.test(path)) {
@@ -82,7 +97,14 @@ function go(menu: MenuTreeItem) {
             <Setting />
           </el-icon>
         </el-tooltip>
-        <el-avatar :size="30" :icon="UserFilled" class="header-avatar" />
+        <el-dropdown @command="handleUserCommand">
+          <el-avatar :size="30" :icon="UserFilled" class="header-avatar" />
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="logout" :icon="SwitchButton">退出登录</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
     </el-header>
 

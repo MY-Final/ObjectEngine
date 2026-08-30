@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import cn.dev33.satoken.exception.NotLoginException;
 
 /**
  * 全局异常处理：HTTP 状态码与响应体 code 保持一致
@@ -41,6 +42,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
         return badRequest("参数类型错误");
+    }
+
+    @ExceptionHandler(NotLoginException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNotLogin(NotLoginException e) {
+        return ResponseEntity.status(401).body(ApiResponse.error(401, "未登录或登录已过期"));
     }
 
     @ExceptionHandler(NoResourceFoundException.class)

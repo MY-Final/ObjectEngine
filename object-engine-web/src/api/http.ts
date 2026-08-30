@@ -1,6 +1,7 @@
 import axios, { type AxiosRequestConfig } from 'axios'
 import { ElMessage } from 'element-plus'
 import type { ApiResponse } from '@/types/api'
+import { clearToken, getToken } from '@/constants/auth'
 
 /** 扩展配置：silent=true 时错误不弹 ElMessage，由调用方自行处理 */
 export interface RequestConfig extends AxiosRequestConfig {
@@ -10,6 +11,15 @@ export interface RequestConfig extends AxiosRequestConfig {
 const instance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
   timeout: 15000,
+})
+
+// 请求统一携带登录 token（Sa-Token 按 Authorization 请求头读取）
+instance.interceptors.request.use((config) => {
+  const token = getToken()
+  if (token) {
+    config.headers.Authorization = token
+  }
+  return config
 })
 
 /**
@@ -32,6 +42,14 @@ instance.interceptors.response.use(
     return response
   },
   (error) => {
+    // 登录过期：清 token 并跳登录页（当前已在登录页时仅提示，避免循环跳转）
+    if (error.response?.status === 401) {
+      clearToken()
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
+      return Promise.reject(error)
+    }
     if (!(error.config as RequestConfig | undefined)?.silent) {
       const body = error.response?.data as ApiResponse<unknown> | undefined
       if (body && typeof body === 'object' && 'message' in body) {

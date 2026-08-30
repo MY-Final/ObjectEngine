@@ -57,6 +57,13 @@
             <version>${fastjson2.version}</version>
         </dependency>
 
+        <!-- Sa-Token 登录鉴权 -->
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-spring-boot3-starter</artifactId>
+            <version>1.39.0</version>
+        </dependency>
+
         <!-- Flowable 工作流（2026-08-29 起暂时停用；恢复时取消注释，
              并同步放开 application.yaml 中的 flowable 配置段，database-catalog 必须保留） -->
         <!--

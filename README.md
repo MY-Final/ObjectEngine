@@ -154,6 +154,7 @@ object-engine
 
 ## 📄 更多文档
 
+- **元数据驱动架构**：[docs/metadata-driven-architecture.md](docs/metadata-driven-architecture.md) —— 数据模型、运行时链路与字段类型扩展指南
 - 开发规范与团队约定见 [AGENTS.md](AGENTS.md)
 - 接口设计文档见 [docs/controller/v2.md](docs/controller/v2.md)
 
