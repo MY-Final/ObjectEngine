@@ -21,6 +21,7 @@ export const FIELD_TYPE_OPTIONS: Array<{ label: string; value: FieldType }> = [
   { label: '电话', value: 'PHONE' },
   { label: '邮箱', value: 'EMAIL' },
   { label: '网址', value: 'URL' },
+  { label: '关联关系', value: 'REFERENCE' },
 ]
 
 export const FIELD_TYPE_LABEL_MAP: Record<FieldType, string> = {
@@ -33,6 +34,7 @@ export const FIELD_TYPE_LABEL_MAP: Record<FieldType, string> = {
   TIME: '时间',
   SELECT: '下拉选择',
   MULTI_SELECT: '多选',
+  REFERENCE: '关联关系',
   BOOLEAN: '布尔',
   PHONE: '电话',
   EMAIL: '邮箱',
@@ -41,9 +43,10 @@ export const FIELD_TYPE_LABEL_MAP: Record<FieldType, string> = {
 
 /**
  * FieldType → Element Plus 组件映射，FieldRenderer 依据它渲染，
- * 新增字段类型时只需要在这里扩展，不需要修改渲染组件
+ * 新增字段类型时只需要在这里扩展，不需要修改渲染组件。
+ * REFERENCE 是自定义组件（远程搜索关联记录），由 FieldRenderer 模板特殊处理
  */
-export const FIELD_COMPONENT_MAP: Record<FieldType, Component> = {
+export const FIELD_COMPONENT_MAP: Partial<Record<FieldType, Component>> = {
   TEXT: ElInput,
   TEXTAREA: ElInput,
   PHONE: ElInput,

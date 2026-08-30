@@ -6,6 +6,7 @@ export type FieldType =
   | 'DATE'
   | 'SELECT'
   | 'MULTI_SELECT'
+  | 'REFERENCE'
   | 'BOOLEAN'
   | 'TIME'
   | 'PHONE'

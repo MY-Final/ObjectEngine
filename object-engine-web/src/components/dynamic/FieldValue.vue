@@ -70,6 +70,21 @@ const display = computed<string>(() => {
   if (field.fieldType === 'BOOLEAN') {
     return value === true || value === 'true' ? '是' : '否'
   }
+  if (field.fieldType === 'REFERENCE') {
+    if (typeof value === 'object' && value !== null) {
+      const { recordId, text } = value as { recordId?: unknown; text?: unknown }
+      if (text !== null && text !== undefined && text !== '') {
+        return String(text)
+      }
+      if (recordId !== null && recordId !== undefined) {
+        return `#${String(recordId)}`
+      }
+    }
+    if (typeof value === 'number') {
+      return `#${value}`
+    }
+    return String(value)
+  }
   if (field.fieldType === 'DATE') {
     return String(value).replace(/T.*$/, '')
   }

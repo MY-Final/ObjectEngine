@@ -5,6 +5,7 @@ import { Refresh } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { createField, updateField } from '@/api/field'
 import { listEnabledOptions, listOptionSets } from '@/api/optionSet'
+import { listObjects } from '@/api/object'
 import type {
   CreateFieldPayload,
   CustomField,
@@ -13,6 +14,7 @@ import type {
   FieldType,
   UpdateFieldPayload,
 } from '@/types/field'
+import type { CustomObject } from '@/types/object'
 import type { OptionSet, OptionSetItem } from '@/types/optionSet'
 import { API_NAME_HINT, API_NAME_PATTERN, FIELD_TYPE_OPTIONS } from '@/constants/field'
 import SelectOptionEditor from './SelectOptionEditor.vue'
@@ -120,6 +122,32 @@ watch(optionSetId, (id) => {
   }
 })
 
+// —— 关联关系（REFERENCE）：选择业务对象 ——
+const referenceTarget = ref<string>()
+const enabledObjects = ref<CustomObject[]>([])
+const referenceError = ref('')
+const objectsLoaded = ref(false)
+
+async function loadObjects() {
+  if (objectsLoaded.value) return
+  objectsLoaded.value = true
+  try {
+    const result = await listObjects({ page: 1, pageSize: 100 })
+    enabledObjects.value = result.records.filter((object) => object.status === 1)
+  } catch {
+    objectsLoaded.value = false
+  }
+}
+
+watch(
+  () => form.fieldType,
+  (fieldType) => {
+    if (fieldType === 'REFERENCE') {
+      void loadObjects()
+    }
+  },
+)
+
 // NUMBER / MONEY 的默认值用数字输入框编辑，后端 defaultValue 为字符串，这里做桥接
 const numberDefaultValue = computed<number | undefined>({
   get: () =>
@@ -168,6 +196,14 @@ watch(visible, (open) => {
     form.status = target.status
     options.value = (target.configJson?.options ?? []).map((option) => ({ ...option }))
     loadTypeConfig(target.configJson)
+    referenceTarget.value =
+      typeof target.configJson?.targetObjectApiName === 'string'
+        ? target.configJson.targetObjectApiName
+        : undefined
+    referenceError.value = ''
+    if (form.fieldType === 'REFERENCE') {
+      void loadObjects()
+    }
     optionSource.value = target.optionSource === 'GLOBAL' ? 'GLOBAL' : 'LOCAL'
     optionSetId.value = target.optionSetId ?? undefined
     optionSetError.value = ''
@@ -195,6 +231,8 @@ watch(visible, (open) => {
     optionSetId.value = undefined
     globalOptions.value = []
     optionSetError.value = ''
+    referenceTarget.value = undefined
+    referenceError.value = ''
   }
   formRef.value?.clearValidate()
 })
@@ -229,6 +267,13 @@ async function handleSubmit() {
       }
       configJson = { options: trimmed }
     }
+  } else if (form.fieldType === 'REFERENCE') {
+    if (!referenceTarget.value) {
+      referenceError.value = '请选择要关联的业务对象'
+      return
+    }
+    referenceError.value = ''
+    configJson = { targetObjectApiName: referenceTarget.value }
   } else if (isTextLike.value || isNumeric.value) {
     configJson = {}
     if (typeConfig.maxLength != null) configJson.maxLength = typeConfig.maxLength
@@ -318,6 +363,27 @@ async function handleSubmit() {
         </el-select>
         <div v-if="isEdit" class="form-hint">字段类型创建后不可修改</div>
       </el-form-item>
+      <template v-if="form.fieldType === 'REFERENCE'">
+        <el-form-item label="业务对象" required>
+          <el-select
+            v-model="referenceTarget"
+            filterable
+            :disabled="isEdit"
+            placeholder="选择要关联的业务对象"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="object in enabledObjects"
+              :key="object.apiName"
+              :label="`${object.objectName}（${object.apiName}）`"
+              :value="object.apiName"
+            />
+          </el-select>
+          <div v-if="referenceError" class="options-error">{{ referenceError }}</div>
+          <div v-else-if="isEdit" class="form-hint">业务对象创建后不可修改</div>
+          <div v-else class="form-hint">表单中将可搜索并关联该对象的数据记录，列表展示记录名称</div>
+        </el-form-item>
+      </template>
       <template v-if="isTextLike">
         <el-form-item label="最大长度">
           <el-input-number
@@ -386,19 +452,27 @@ async function handleSubmit() {
           placeholder="默认值（可选）"
         />
         <el-input-number
-          v-else-if="form.fieldType === 'NUMBER' || form.fieldType === 'MONEY'"
+          v-else-if="form.fieldType === 'NUMBER' || form.fieldType === 'MONEY' || form.fieldType === 'PERCENT'"
           v-model="numberDefaultValue"
           :controls="false"
           style="width: 100%"
         />
         <el-date-picker
-          v-else
+          v-else-if="form.fieldType === 'DATE'"
           v-model="form.defaultValue"
           type="date"
           value-format="YYYY-MM-DD"
           placeholder="默认日期（可选）"
           style="width: 100%"
         />
+        <el-time-picker
+          v-else-if="form.fieldType === 'TIME'"
+          v-model="form.defaultValue"
+          value-format="HH:mm:ss"
+          placeholder="默认时间（可选）"
+          style="width: 100%"
+        />
+        <span v-else-if="form.fieldType === 'REFERENCE'" class="form-hint">关联字段不支持默认值</span>
       </el-form-item>
       <el-form-item label="排序">
         <el-input-number v-model="form.sort" :min="0" />

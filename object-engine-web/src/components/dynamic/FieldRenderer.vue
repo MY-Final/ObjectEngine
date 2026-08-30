@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import type { CustomField } from '@/types/field'
 import { FIELD_COMPONENT_MAP } from '@/constants/field'
+import ReferenceSelect from './ReferenceSelect.vue'
 
 /**
  * Runtime 核心组件：根据 field.fieldType 从 FIELD_COMPONENT_MAP
@@ -84,7 +85,15 @@ function handleUpdate(value: unknown) {
 </script>
 
 <template>
+  <!-- REFERENCE 走自定义远程搜索组件，其余按类型映射到 Element Plus 组件 -->
+  <ReferenceSelect
+    v-if="field.fieldType === 'REFERENCE'"
+    :field="field"
+    :model-value="modelValue"
+    @update:model-value="handleUpdate"
+  />
   <component
+    v-else-if="component"
     :is="component"
     :model-value="modelValue"
     v-bind="extraProps"

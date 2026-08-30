@@ -1,5 +1,7 @@
 package com.myfinal.objectengine.service.impl;
 
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -9,6 +11,7 @@ import com.myfinal.objectengine.common.PageResult;
 import com.myfinal.objectengine.domain.CustomField;
 import com.myfinal.objectengine.domain.CustomObject;
 import com.myfinal.objectengine.domain.CustomRecord;
+import com.myfinal.objectengine.engine.FieldTypeRegistry;
 import com.myfinal.objectengine.engine.RecordValidator;
 import com.myfinal.objectengine.mapper.CustomRecordMapper;
 import com.myfinal.objectengine.service.CustomFieldService;
@@ -43,6 +46,7 @@ public class CustomRecordServiceImpl extends ServiceImpl<CustomRecordMapper, Cus
         CustomObject object = customObjectService.requireByApiName(objectApiName);
         List<CustomField> fields = customFieldService.listByObjectId(object.getId());
         RecordValidator.validate(fields, body);
+        normalizeReferenceFields(object, fields, body);
         checkUniqueValues(object, fields, body, null);
 
         CustomRecord record = new CustomRecord();
@@ -60,6 +64,7 @@ public class CustomRecordServiceImpl extends ServiceImpl<CustomRecordMapper, Cus
         CustomRecord record = requireRecord(objectApiName, id);
         List<CustomField> fields = customFieldService.listByObjectId(object.getId());
         RecordValidator.validate(fields, body);
+        normalizeReferenceFields(object, fields, body);
         checkUniqueValues(object, fields, body, record.getId());
 
         // 全量替换字段值，与创建的语义保持一致
@@ -67,6 +72,62 @@ public class CustomRecordServiceImpl extends ServiceImpl<CustomRecordMapper, Cus
         record.setUpdatedAt(new Date());
         updateById(record);
         return RecordVO.from(record);
+    }
+
+    /**
+     * REFERENCE 字段归一化：校验目标对象与记录存在，由服务端解析展示文本，
+     * 改写为 { recordId, text } 快照——列表与表单展示不依赖二次查询
+     */
+    private void normalizeReferenceFields(CustomObject object, List<CustomField> fields, Map<String, Object> body) {
+        for (CustomField field : fields) {
+            if (!"REFERENCE".equals(field.getFieldType())) {
+                continue;
+            }
+            Object value = body.get(field.getApiName());
+            if (value == null || (value instanceof String s && s.isEmpty())) {
+                body.put(field.getApiName(), null);
+                continue;
+            }
+            long recordId = FieldTypeRegistry.referenceRecordId(field, value);
+            String targetApiName = extractTargetApiName(field);
+            CustomObject target = customObjectService.requireByApiName(targetApiName);
+            if (!Integer.valueOf(1).equals(target.getStatus())) {
+                throw BusinessException.badRequest("关联的对象已停用：" + target.getObjectName());
+            }
+            CustomRecord targetRecord = requireRecord(targetApiName, recordId);
+            body.put(field.getApiName(),
+                Map.of("recordId", recordId, "text", resolveDisplayText(target, targetRecord)));
+        }
+    }
+
+    private String extractTargetApiName(CustomField field) {
+        JSONObject config = parseConfig(field.getConfigJson());
+        String targetApiName = config.getString("targetObjectApiName");
+        if (targetApiName == null || targetApiName.isBlank()) {
+            throw BusinessException.badRequest("字段【" + field.getFieldName() + "】未配置关联对象");
+        }
+        return targetApiName;
+    }
+
+    /** 关联记录展示文本：优先 name 字段，其次第一个启用中的文本字段，兜底 #记录ID */
+    private String resolveDisplayText(CustomObject target, CustomRecord record) {
+        List<CustomField> targetFields = customFieldService.listByObjectId(target.getId()).stream()
+            .filter(field -> field.getStatus() == null || field.getStatus() == 1)
+            .toList();
+        CustomField displayField = targetFields.stream()
+            .filter(field -> "name".equals(field.getApiName()))
+            .findFirst()
+            .or(() -> targetFields.stream().filter(field -> "TEXT".equals(field.getFieldType())).findFirst())
+            .or(() -> targetFields.stream().filter(field -> "TEXTAREA".equals(field.getFieldType())).findFirst())
+            .orElse(null);
+        Map<String, Object> data = JsonUtils.toMap(record.getDataJson());
+        if (displayField != null && data != null) {
+            Object value = data.get(displayField.getApiName());
+            if (value != null && !(value instanceof String s && s.isEmpty())) {
+                return String.valueOf(value);
+            }
+        }
+        return "#" + record.getId();
     }
 
     /**
@@ -167,5 +228,16 @@ public class CustomRecordServiceImpl extends ServiceImpl<CustomRecordMapper, Cus
             throw BusinessException.notFound("记录不存在：" + id);
         }
         return record;
+    }
+
+    /** configJson 统一解析为 JSONObject，空值返回空对象 */
+    private static JSONObject parseConfig(Object configJson) {
+        if (configJson == null) {
+            return new JSONObject();
+        }
+        if (configJson instanceof String s) {
+            return s.isBlank() ? new JSONObject() : JSON.parseObject(s);
+        }
+        return JSON.parseObject(JSON.toJSONString(configJson));
     }
 }

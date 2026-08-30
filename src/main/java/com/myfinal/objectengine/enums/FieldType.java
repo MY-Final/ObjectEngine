@@ -12,6 +12,7 @@ public enum FieldType {
     DATE,
     SELECT,
     MULTI_SELECT,
+    REFERENCE,
     BOOLEAN,
     TIME,
     PHONE,

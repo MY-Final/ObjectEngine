@@ -45,6 +45,7 @@ public final class FieldTypeRegistry {
         REGISTRY.put(FieldType.DATE, FieldTypeRegistry::requireDate);
         REGISTRY.put(FieldType.SELECT, FieldTypeRegistry::requireOption);
         REGISTRY.put(FieldType.MULTI_SELECT, FieldTypeRegistry::requireOptionList);
+        REGISTRY.put(FieldType.REFERENCE, FieldTypeRegistry::requireReference);
         REGISTRY.put(FieldType.BOOLEAN, FieldTypeRegistry::requireBoolean);
         REGISTRY.put(FieldType.TIME, FieldTypeRegistry::requireTime);
         REGISTRY.put(FieldType.PHONE, FieldTypeRegistry::requirePhone);
@@ -155,6 +156,23 @@ public final class FieldTypeRegistry {
         if (!optionValues.contains(String.valueOf(value))) {
             throw BusinessException.badRequest("字段【" + field.getFieldName() + "】的值不在选项范围内");
         }
+    }
+
+    /**
+     * 提取关联字段值中的记录 ID：接受数字或 { "recordId": 数字 } 结构
+     */
+    public static Long referenceRecordId(CustomField field, Object value) {
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        if (value instanceof Map<?, ?> map && map.get("recordId") instanceof Number number) {
+            return number.longValue();
+        }
+        throw BusinessException.badRequest("字段【" + field.getFieldName() + "】必须是关联的记录");
+    }
+
+    private static void requireReference(CustomField field, Object value) {
+        referenceRecordId(field, value);
     }
 
     private static void requireOptionList(CustomField field, Object value) {

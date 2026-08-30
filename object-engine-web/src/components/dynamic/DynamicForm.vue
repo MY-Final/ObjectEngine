@@ -27,8 +27,9 @@ const rules = computed<FormRules>(() => {
   for (const field of props.fields) {
     const rulesForField: FormRules[string] = []
     if (field.requiredFlag === 1) {
-      // 选择类控件变更即触发校验，提示语用「请选择」
-      const isChoice = ['SELECT', 'MULTI_SELECT', 'DATE', 'TIME', 'BOOLEAN'].includes(field.fieldType)
+    // 选择类控件变更即触发校验，提示语用「请选择」
+    const isChoice =
+      ['SELECT', 'MULTI_SELECT', 'DATE', 'TIME', 'BOOLEAN', 'REFERENCE'].includes(field.fieldType)
       rulesForField.push({
         required: true,
         message: isChoice ? `请选择${field.fieldName}` : `请输入${field.fieldName}`,

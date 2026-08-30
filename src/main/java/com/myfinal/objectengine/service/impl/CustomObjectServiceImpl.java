@@ -179,6 +179,13 @@ public class CustomObjectServiceImpl extends ServiceImpl<CustomObjectMapper, Cus
     @Transactional
     public void deleteByApiName(String apiName) {
         CustomObject object = requireByApiName(apiName);
+        // 被其他对象的 REFERENCE 字段引用时禁止删除，避免关联悬空（configJson 存目标对象 apiName）
+        long referenceFieldCount = customFieldMapper.selectCount(new LambdaQueryWrapper<CustomField>()
+            .eq(CustomField::getFieldType, "REFERENCE")
+            .like(CustomField::getConfigJson, "\"targetObjectApiName\":\"" + apiName + "\""));
+        if (referenceFieldCount > 0) {
+            throw BusinessException.badRequest("该对象正被关联字段引用，无法删除");
+        }
         customFieldMapper.delete(new LambdaQueryWrapper<CustomField>().eq(CustomField::getObjectId, object.getId()));
         customRecordMapper.delete(new LambdaQueryWrapper<CustomRecord>().eq(CustomRecord::getObjectId, object.getId()));
         // 对象菜单生命周期与对象绑定，一起删除（含手动创建的 OBJECT 菜单）
