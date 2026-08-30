@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -38,6 +39,13 @@ public class CustomRecordController {
                                                   @RequestParam(defaultValue = "20") Integer pageSize,
                                                   @RequestParam(required = false) String keyword) {
         return ApiResponse.ok(customRecordService.page(apiName, page, pageSize, keyword));
+    }
+
+    @PutMapping("/{id}")
+    public ApiResponse<RecordVO> update(@PathVariable String apiName,
+                                        @PathVariable Long id,
+                                        @RequestBody Map<String, Object> body) {
+        return ApiResponse.ok(customRecordService.update(apiName, id, body));
     }
 
     @GetMapping("/{id}")

@@ -13,7 +13,7 @@ withDefaults(
   { loading: false, deletingId: null },
 )
 
-const emit = defineEmits<{ delete: [record: CustomRecord] }>()
+const emit = defineEmits<{ delete: [record: CustomRecord]; edit: [record: CustomRecord] }>()
 </script>
 
 <template>
@@ -30,10 +30,11 @@ const emit = defineEmits<{ delete: [record: CustomRecord] }>()
         <FieldValue :field="field" :value="row.data[field.apiName]" />
       </template>
     </el-table-column>
-    <el-table-column label="操作" width="90" fixed="right">
+    <el-table-column label="操作" width="120" fixed="right">
       <template #default="{ row }">
-        <!-- 默认提供删除；需要扩展编辑/复制等操作时用 #actions 覆盖 -->
+        <!-- 默认提供 编辑/删除；需要扩展复制等操作时用 #actions 覆盖 -->
         <slot name="actions" :row="row">
+          <el-button link type="primary" @click="emit('edit', row)">编辑</el-button>
           <el-button
             link
             type="danger"

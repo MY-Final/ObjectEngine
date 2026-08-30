@@ -24,6 +24,13 @@ public interface CustomRecordService extends IService<CustomRecord> {
      */
     PageResult<RecordVO> page(String objectApiName, Integer page, Integer pageSize, String keyword);
 
+    /**
+     * 更新记录：全量替换字段值，校验逻辑与创建一致；唯一性查重排除记录自身
+     *
+     * @param body 请求体直接是 fieldApiName -> value
+     */
+    RecordVO update(String objectApiName, Long id, Map<String, Object> body);
+
     RecordVO get(String objectApiName, Long id);
 
     void delete(String objectApiName, Long id);

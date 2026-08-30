@@ -2,10 +2,12 @@
 import { ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMetadata } from '@/api/object'
-import { deleteRecord, listRecords } from '@/api/record'
+import { deleteRecord, listRecords, updateRecord } from '@/api/record'
 import type { CustomField } from '@/types/field'
 import type { ObjectMetadata } from '@/types/object'
 import type { CustomRecord, RecordFilterQuery } from '@/types/record'
+import { buildFormModel } from '@/utils/record'
+import DynamicForm from './DynamicForm.vue'
 import DynamicFilter from './DynamicFilter.vue'
 import DynamicTable from './DynamicTable.vue'
 
@@ -92,6 +94,35 @@ async function handleDelete(row: CustomRecord) {
   }
 }
 
+// —— 编辑记录 ——
+const editVisible = ref(false)
+const editingRecord = ref<CustomRecord | null>(null)
+const editModel = ref<Record<string, unknown>>({})
+const editFormRef = ref<InstanceType<typeof DynamicForm>>()
+const editSubmitting = ref(false)
+
+function openEdit(row: CustomRecord) {
+  editingRecord.value = row
+  editModel.value = buildFormModel(fields.value, row.data)
+  editVisible.value = true
+}
+
+async function handleEditSubmit() {
+  if (!editingRecord.value || !editFormRef.value) return
+  const valid = await editFormRef.value.validate()
+  if (!valid) return
+  editSubmitting.value = true
+  try {
+    await updateRecord(props.objectApiName, editingRecord.value.id, editModel.value)
+    ElMessage.success('保存成功')
+    editVisible.value = false
+    // 编辑不改变条数，保持当前筛选与页码刷新即可
+    await loadRecords()
+  } finally {
+    editSubmitting.value = false
+  }
+}
+
 /** 重置筛选与页码后重新加载，供外部（如新建成功后）调用 */
 function refresh() {
   page.value = 1
@@ -129,6 +160,7 @@ defineExpose({ refresh })
       :records="records"
       :loading="listLoading"
       :deleting-id="deletingId"
+      @edit="openEdit"
       @delete="handleDelete"
     />
     <el-pagination
@@ -141,6 +173,14 @@ defineExpose({ refresh })
       @size-change="handleSizeChange"
       @current-change="handlePageChange"
     />
+
+    <el-dialog v-model="editVisible" title="编辑记录" width="560px">
+      <DynamicForm ref="editFormRef" v-model="editModel" :fields="fields" />
+      <template #footer>
+        <el-button @click="editVisible = false">取消</el-button>
+        <el-button type="primary" :loading="editSubmitting" @click="handleEditSubmit">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 

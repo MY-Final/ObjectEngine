@@ -15,6 +15,11 @@ export function getRecord(apiName: string, id: number) {
   return http.get<CustomRecord>(`/objects/${apiName}/records/${id}`)
 }
 
+/** 更新为全量替换，请求体与创建一致：fieldApiName -> value */
+export function updateRecord(apiName: string, id: number, data: Record<string, unknown>) {
+  return http.put<CustomRecord>(`/objects/${apiName}/records/${id}`, data)
+}
+
 export function deleteRecord(apiName: string, id: number) {
   return http.delete<void>(`/objects/${apiName}/records/${id}`)
 }

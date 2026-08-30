@@ -8,6 +8,7 @@ import DynamicForm from '@/components/dynamic/DynamicForm.vue'
 import DynamicObjectList from '@/components/dynamic/DynamicObjectList.vue'
 import type { CustomField } from '@/types/field'
 import type { ObjectMetadata } from '@/types/object'
+import { buildFormModel } from '@/utils/record'
 
 /**
  * ObjectRuntime 页面：只负责路由参数、页头与新建弹窗；
@@ -65,29 +66,8 @@ const listRef = ref<InstanceType<typeof DynamicObjectList>>()
 
 function openCreate() {
   if (!metadata.value) return
-  // 按 fields 初始化表单数据，存在 defaultValue 的字段使用默认值
-  const model: Record<string, unknown> = {}
-  for (const field of activeFields.value) {
-    const defaultValue = field.defaultValue
-    if (defaultValue == null || defaultValue === '') {
-      // 空默认值：多选给空数组、布尔给 false，其余置 null
-      model[field.apiName] =
-        field.fieldType === 'MULTI_SELECT'
-          ? []
-          : field.fieldType === 'BOOLEAN'
-            ? false
-            : null
-    } else if (field.fieldType === 'NUMBER' || field.fieldType === 'MONEY' || field.fieldType === 'PERCENT') {
-      model[field.apiName] = Number(defaultValue)
-    } else if (field.fieldType === 'BOOLEAN') {
-      model[field.apiName] = defaultValue === 'true'
-    } else if (field.fieldType === 'MULTI_SELECT') {
-      model[field.apiName] = defaultValue.split(',').map((item) => item.trim())
-    } else {
-      model[field.apiName] = defaultValue
-    }
-  }
-  formModel.value = model
+  // 按字段 defaultValue 初始化表单模型（类型桥接在公共函数里，与编辑共用）
+  formModel.value = buildFormModel(activeFields.value)
   dialogVisible.value = true
 }
 
