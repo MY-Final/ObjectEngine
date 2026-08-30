@@ -29,6 +29,9 @@ export interface FieldConfig {
   [key: string]: unknown
 }
 
+/** 选项来源：LOCAL 字段自有选项，GLOBAL 引用通用选项集 */
+export type OptionSource = 'LOCAL' | 'GLOBAL'
+
 export interface CustomField {
   id: number
   objectId: number
@@ -44,6 +47,8 @@ export interface CustomField {
   sort: number
   defaultValue?: string | null
   configJson?: FieldConfig | null
+  optionSource?: OptionSource | null
+  optionSetId?: number | null
   status: number
   createdAt: string
   updatedAt: string
@@ -62,6 +67,8 @@ export interface CreateFieldPayload {
   sort?: number
   defaultValue?: string | null
   configJson?: FieldConfig | null
+  optionSource?: OptionSource
+  optionSetId?: number | null
 }
 
 export interface UpdateFieldPayload {
@@ -75,5 +82,7 @@ export interface UpdateFieldPayload {
   sort?: number
   defaultValue?: string | null
   configJson?: FieldConfig | null
+  optionSource?: OptionSource
+  optionSetId?: number | null
   status?: number
 }

@@ -65,12 +65,13 @@ public final class FieldTypeRegistry {
 
     /**
      * 创建/修改字段时校验类型配置：
-     * SELECT / MULTI_SELECT 必须配置非空 options；长度、位数配置需在合法范围内
+     * LOCAL 的 SELECT / MULTI_SELECT 必须配置非空 options（GLOBAL 由选项集提供，跳过）；
+     * 长度、位数配置需在合法范围内
      */
-    public static void validateConfig(String fieldType, String fieldName, Object configJson) {
+    public static void validateConfig(String fieldType, String fieldName, Object configJson, boolean enforceOptions) {
         boolean optionType = FieldType.SELECT.name().equals(fieldType)
             || FieldType.MULTI_SELECT.name().equals(fieldType);
-        if (optionType && extractOptionValues(configJson).isEmpty()) {
+        if (optionType && enforceOptions && extractOptionValues(configJson).isEmpty()) {
             throw BusinessException.badRequest("字段【" + fieldName + "】必须配置 options 选项");
         }
         JSONObject config = parseConfig(configJson);

@@ -29,6 +29,16 @@ public class UpdateFieldRequest {
     private Object configJson;
 
     /**
+     * 选项来源：LOCAL字段自有，GLOBAL引用通用选项集，仅选择类字段有效
+     */
+    private String optionSource;
+
+    /**
+     * 通用选项集ID（optionSource=GLOBAL 时必填）
+     */
+    private Long optionSetId;
+
+    /**
      * 状态：1启用，0停用
      */
     private Integer status;

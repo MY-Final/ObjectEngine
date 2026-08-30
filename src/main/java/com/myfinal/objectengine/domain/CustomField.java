@@ -85,6 +85,16 @@ public class CustomField {
     private Object configJson;
 
     /**
+     * 选项来源：LOCAL字段自有选项，GLOBAL引用通用选项集（仅选择类字段使用）
+     */
+    private String optionSource;
+
+    /**
+     * 通用选项集ID（option_source=GLOBAL 时使用）
+     */
+    private Long optionSetId;
+
+    /**
      * 状态：1启用，0停用
      */
     private Integer status;

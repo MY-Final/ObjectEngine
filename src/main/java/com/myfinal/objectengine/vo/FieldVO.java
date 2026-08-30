@@ -20,6 +20,8 @@ public class FieldVO {
     private Integer sort;
     private String defaultValue;
     private Object configJson;
+    private String optionSource;
+    private Long optionSetId;
     private Integer status;
 
     public static FieldVO from(CustomField entity) {
@@ -37,6 +39,8 @@ public class FieldVO {
         vo.setSort(entity.getSort());
         vo.setDefaultValue(entity.getDefaultValue());
         vo.setConfigJson(JsonUtils.parse(entity.getConfigJson()));
+        vo.setOptionSource(entity.getOptionSource());
+        vo.setOptionSetId(entity.getOptionSetId());
         vo.setStatus(entity.getStatus());
         return vo;
     }

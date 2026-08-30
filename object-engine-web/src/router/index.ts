@@ -53,6 +53,12 @@ const router = createRouter({
           component: () => import('@/views/menu/index.vue'),
           meta: { title: '菜单管理' },
         },
+        {
+          path: 'admin/option-sets',
+          name: 'option-set-list',
+          component: () => import('@/views/option-set/index.vue'),
+          meta: { title: '通用选项集' },
+        },
         // 旧地址兼容重定向（书签 / 未更新的菜单数据），redirect 字符串会自动带上路由参数
         { path: 'objects', redirect: '/admin/objects' },
         { path: 'objects/:apiName', redirect: '/admin/objects/:apiName' },

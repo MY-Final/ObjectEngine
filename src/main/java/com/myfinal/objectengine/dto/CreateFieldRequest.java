@@ -47,4 +47,14 @@ public class CreateFieldRequest {
      * 扩展配置，SELECT 类型存放 { "options": [ { "label": xx, "value": yy } ] }
      */
     private Object configJson;
+
+    /**
+     * 选项来源：LOCAL字段自有（默认），GLOBAL引用通用选项集，仅选择类字段有效
+     */
+    private String optionSource;
+
+    /**
+     * 通用选项集ID（optionSource=GLOBAL 时必填）
+     */
+    private Long optionSetId;
 }

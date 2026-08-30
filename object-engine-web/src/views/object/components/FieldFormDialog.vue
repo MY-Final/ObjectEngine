@@ -3,6 +3,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { createField, updateField } from '@/api/field'
+import { listEnabledOptions, listOptionSets } from '@/api/optionSet'
 import type {
   CreateFieldPayload,
   CustomField,
@@ -11,6 +12,7 @@ import type {
   FieldType,
   UpdateFieldPayload,
 } from '@/types/field'
+import type { OptionSet, OptionSetItem } from '@/types/optionSet'
 import { API_NAME_HINT, API_NAME_PATTERN, FIELD_TYPE_OPTIONS } from '@/constants/field'
 import SelectOptionEditor from './SelectOptionEditor.vue'
 
@@ -63,6 +65,50 @@ function loadTypeConfig(config: FieldConfig | null | undefined) {
   typeConfig.scale = typeof config?.scale === 'number' ? config.scale : undefined
 }
 
+// —— 选项来源（仅选择类字段）：LOCAL 自定义选项 / GLOBAL 通用选项集 ——
+const optionSource = ref<'LOCAL' | 'GLOBAL'>('LOCAL')
+const optionSetId = ref<number>()
+const enabledSets = ref<OptionSet[]>([])
+const globalOptions = ref<OptionSetItem[]>([])
+const optionSetError = ref('')
+const optionSetsLoaded = ref(false)
+
+async function loadOptionSets() {
+  if (optionSetsLoaded.value) return
+  optionSetsLoaded.value = true
+  try {
+    const result = await listOptionSets({ page: 1, pageSize: 100, status: 1 })
+    enabledSets.value = result.records
+  } catch {
+    optionSetsLoaded.value = false
+  }
+}
+
+async function loadPreview(optionSetId?: number) {
+  globalOptions.value = []
+  if (!optionSetId) return
+  try {
+    globalOptions.value = await listEnabledOptions(optionSetId)
+  } catch {
+    globalOptions.value = []
+  }
+}
+
+function handleOptionSourceChange(source: 'LOCAL' | 'GLOBAL') {
+  if (source === 'GLOBAL') {
+    void loadOptionSets()
+    void loadPreview(optionSetId.value)
+  } else {
+    optionSetError.value = ''
+  }
+}
+
+watch(optionSetId, (id) => {
+  if (optionSource.value === 'GLOBAL') {
+    void loadPreview(id)
+  }
+})
+
 // NUMBER / MONEY 的默认值用数字输入框编辑，后端 defaultValue 为字符串，这里做桥接
 const numberDefaultValue = computed<number | undefined>({
   get: () =>
@@ -111,6 +157,13 @@ watch(visible, (open) => {
     form.status = target.status
     options.value = (target.configJson?.options ?? []).map((option) => ({ ...option }))
     loadTypeConfig(target.configJson)
+    optionSource.value = target.optionSource === 'GLOBAL' ? 'GLOBAL' : 'LOCAL'
+    optionSetId.value = target.optionSetId ?? undefined
+    optionSetError.value = ''
+    if (isOptionType.value) {
+      void loadOptionSets()
+      void loadPreview(optionSetId.value)
+    }
   } else {
     form.apiName = ''
     form.fieldName = ''
@@ -126,6 +179,10 @@ watch(visible, (open) => {
     form.status = 1
     options.value = []
     loadTypeConfig(null)
+    optionSource.value = 'LOCAL'
+    optionSetId.value = undefined
+    globalOptions.value = []
+    optionSetError.value = ''
   }
   formRef.value?.clearValidate()
 })
@@ -134,18 +191,32 @@ async function handleSubmit() {
   const valid = await formRef.value?.validate().then(() => true).catch(() => false)
   if (!valid) return
 
-  // 选择类必须配置 options；文本与数字类把长度 / 位数配置写入 configJson，其余一律存 null
+  // 选择类：LOCAL 校验自有选项，GLOBAL 引用通用选项集（选项由后端在元数据中注入）；
+  // 文本与数字类把长度 / 位数配置写入 configJson，其余一律存 null
   let configJson: FieldConfig | null = null
+  let payloadSource: 'LOCAL' | 'GLOBAL' | undefined
+  let payloadSetId: number | null | undefined
   if (isOptionType.value) {
-    const trimmed = options.value.map((option) => ({
-      label: option.label.trim(),
-      value: option.value.trim(),
-    }))
-    if (trimmed.length === 0 || trimmed.some((option) => !option.label || !option.value)) {
-      optionsError.value = '选择类字段必须至少配置一个选项，且选项名称 / 选项值均不能为空'
-      return
+    payloadSource = optionSource.value
+    payloadSetId = optionSource.value === 'GLOBAL' ? (optionSetId.value ?? null) : null
+    if (optionSource.value === 'GLOBAL') {
+      if (!optionSetId.value) {
+        optionSetError.value = '引用通用选项集时必须选择选项集'
+        return
+      }
+      optionSetError.value = ''
+      configJson = null
+    } else {
+      const trimmed = options.value.map((option) => ({
+        label: option.label.trim(),
+        value: option.value.trim(),
+      }))
+      if (trimmed.length === 0 || trimmed.some((option) => !option.label || !option.value)) {
+        optionsError.value = '选择类字段必须至少配置一个选项，且选项名称 / 选项值均不能为空'
+        return
+      }
+      configJson = { options: trimmed }
     }
-    configJson = { options: trimmed }
   } else if (isTextLike.value || isNumeric.value) {
     configJson = {}
     if (typeConfig.maxLength != null) configJson.maxLength = typeConfig.maxLength
@@ -176,6 +247,8 @@ async function handleSubmit() {
         sort: form.sort,
         defaultValue,
         configJson,
+        optionSource: payloadSource,
+        optionSetId: payloadSetId ?? null,
         status: form.status,
       }
       await updateField(props.objectApiName, props.field.apiName, payload)
@@ -194,6 +267,8 @@ async function handleSubmit() {
         sort: form.sort,
         defaultValue,
         configJson,
+        optionSource: payloadSource,
+        optionSetId: payloadSetId ?? null,
       }
       await createField(props.objectApiName, payload)
       ElMessage.success('创建成功')
@@ -316,7 +391,37 @@ async function handleSubmit() {
       <el-form-item label="排序">
         <el-input-number v-model="form.sort" :min="0" />
       </el-form-item>
-      <el-form-item v-if="isOptionType" label="选项配置">
+      <template v-if="isOptionType">
+        <el-form-item label="选项来源">
+          <el-radio-group v-model="optionSource" @change="handleOptionSourceChange">
+            <el-radio-button value="LOCAL">自定义选项</el-radio-button>
+            <el-radio-button value="GLOBAL">通用选项集</el-radio-button>
+          </el-radio-group>
+        </el-form-item>
+        <template v-if="optionSource === 'GLOBAL'">
+          <el-form-item label="选项集" required>
+            <el-select
+              v-model="optionSetId"
+              filterable
+              placeholder="选择通用选项集"
+              style="width: 100%"
+            >
+              <el-option
+                v-for="set in enabledSets"
+                :key="set.id"
+                :label="`${set.name}（${set.apiName}）`"
+                :value="set.id"
+              />
+            </el-select>
+            <div v-if="optionSetError" class="options-error">{{ optionSetError }}</div>
+            <div v-else-if="globalOptions.length" class="form-hint">
+              当前选项：{{ globalOptions.map((option) => option.label).join('、') }}
+            </div>
+            <div v-else class="form-hint">该选项集暂无启用中的选项</div>
+          </el-form-item>
+        </template>
+      </template>
+      <el-form-item v-if="isOptionType && optionSource === 'LOCAL'" label="选项配置">
         <div class="options-editor">
           <SelectOptionEditor v-model="options" />
           <div v-if="optionsError" class="options-error">{{ optionsError }}</div>
