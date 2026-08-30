@@ -3,6 +3,7 @@ package com.myfinal.objectengine.service.impl;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.myfinal.objectengine.common.BusinessException;
@@ -13,12 +14,16 @@ import com.myfinal.objectengine.domain.CustomObject;
 import com.myfinal.objectengine.domain.CustomRecord;
 import com.myfinal.objectengine.engine.FieldTypeRegistry;
 import com.myfinal.objectengine.engine.RecordValidator;
+import com.myfinal.objectengine.domain.CustomSequence;
 import com.myfinal.objectengine.mapper.CustomRecordMapper;
+import com.myfinal.objectengine.mapper.CustomSequenceMapper;
 import com.myfinal.objectengine.service.CustomFieldService;
 import com.myfinal.objectengine.service.CustomObjectService;
 import com.myfinal.objectengine.service.CustomRecordService;
 import com.myfinal.objectengine.vo.RecordVO;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -33,22 +38,27 @@ public class CustomRecordServiceImpl extends ServiceImpl<CustomRecordMapper, Cus
 
     /** 关键字匹配的候选字段类型：文本类字段（SELECT 单选按 value 匹配，多选不参与） */
     private static final Set<String> TEXT_SEARCH_TYPES =
-        Set.of("TEXT", "TEXTAREA", "SELECT", "PHONE", "EMAIL", "URL");
+        Set.of("TEXT", "TEXTAREA", "SELECT", "PHONE", "EMAIL", "URL", "AUTO_NUMBER");
 
     private final CustomObjectService customObjectService;
     private final CustomFieldService customFieldService;
+    private final CustomSequenceMapper customSequenceMapper;
 
-    public CustomRecordServiceImpl(CustomObjectService customObjectService, CustomFieldService customFieldService) {
+    public CustomRecordServiceImpl(CustomObjectService customObjectService, CustomFieldService customFieldService,
+                                   CustomSequenceMapper customSequenceMapper) {
         this.customObjectService = customObjectService;
         this.customFieldService = customFieldService;
+        this.customSequenceMapper = customSequenceMapper;
     }
 
     @Override
+    @Transactional
     public RecordVO create(String objectApiName, Map<String, Object> body) {
         CustomObject object = customObjectService.requireByApiName(objectApiName);
         List<CustomField> fields = customFieldService.listByObjectId(object.getId());
         stripComputedFields(fields, body);
         RecordValidator.validate(fields, body);
+        generateAutoNumbers(fields, body);
         checkUniqueValues(object, fields, body, null);
 
         CustomRecord record = new CustomRecord();
@@ -87,6 +97,57 @@ public class CustomRecordServiceImpl extends ServiceImpl<CustomRecordMapper, Cus
                 body.remove(field.getApiName());
             }
         }
+    }
+
+    /**
+     * AUTO_NUMBER 字段在创建记录时按格式生成编号（更新不重新生成）。
+     * 取号通过 UPDATE 行级锁原子递增，事务提交前锁定，避免并发重号
+     */
+    private void generateAutoNumbers(List<CustomField> fields, Map<String, Object> body) {
+        for (CustomField field : fields) {
+            if (!"AUTO_NUMBER".equals(field.getFieldType())) {
+                continue;
+            }
+            Object existing = body.get(field.getApiName());
+            if (existing != null && !(existing instanceof String s && s.isEmpty())) {
+                continue; // 更新场景回传已生成的编号，不重新取号
+            }
+            long sequence = nextSequenceValue(field);
+            body.put(field.getApiName(), FieldTypeRegistry.formatAutoNumber(field, sequence));
+        }
+    }
+
+    /** 原子递增并返回序号；序列行缺失时惰性初始化为起始编号 - 1 */
+    private long nextSequenceValue(CustomField field) {
+        ensureSequenceRow(field);
+        customSequenceMapper.update(null, new LambdaUpdateWrapper<CustomSequence>()
+            .setSql("current_value = current_value + 1")
+            .eq(CustomSequence::getFieldId, field.getId()));
+        CustomSequence sequence = customSequenceMapper.selectOne(new LambdaQueryWrapper<CustomSequence>()
+            .eq(CustomSequence::getFieldId, field.getId()));
+        return sequence == null ? 1L : sequence.getCurrentValue();
+    }
+
+    private void ensureSequenceRow(CustomField field) {
+        long count = customSequenceMapper.selectCount(new LambdaQueryWrapper<CustomSequence>()
+            .eq(CustomSequence::getFieldId, field.getId()));
+        if (count > 0) {
+            return;
+        }
+        CustomSequence sequence = new CustomSequence();
+        sequence.setFieldId(field.getId());
+        sequence.setCurrentValue(Math.max(0L, startNumberOf(field) - 1));
+        sequence.setUpdatedAt(new Date());
+        try {
+            customSequenceMapper.insert(sequence);
+        } catch (DuplicateKeyException e) {
+            // 并发初始化时唯一键兜底，继续走原子递增
+        }
+    }
+
+    private long startNumberOf(CustomField field) {
+        Integer startNumber = parseConfig(field.getConfigJson()).getInteger("startNumber");
+        return startNumber == null ? 1L : startNumber;
     }
 
     /**

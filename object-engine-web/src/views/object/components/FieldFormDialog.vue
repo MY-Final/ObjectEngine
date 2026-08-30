@@ -194,6 +194,22 @@ watch(optionSetId, (id) => {
   }
 })
 
+// —— 自动编号（AUTO_NUMBER）：显示格式与起始编号 ——
+const autoNumberFormat = ref('{YYYY}{MM}{DD}-{0}')
+const autoNumberStart = ref(1)
+const autoNumberError = ref('')
+
+const autoNumberExample = computed(() => {
+  const now = new Date()
+  const pad = (value: number, length = 2) => String(value).padStart(length, '0')
+  return autoNumberFormat.value
+    .replace(/\{(0+)\}/g, (_, zeros: string) => pad(autoNumberStart.value, zeros.length))
+    .replace('{YYYY}', String(now.getFullYear()))
+    .replace('{YY}', String(now.getFullYear()).slice(-2))
+    .replace('{MM}', pad(now.getMonth() + 1))
+    .replace('{DD}', pad(now.getDate()))
+})
+
 // —— LOOKUP / REFERENCE 的业务对象候选 ——
 const enabledObjects = ref<CustomObject[]>([])
 const objectsLoaded = ref(false)
@@ -274,6 +290,10 @@ watch(visible, (open) => {
     relationObjectId.value = target.relationObjectId ?? undefined
     lookupError.value = ''
     referenceError.value = ''
+    autoNumberFormat.value =
+      typeof target.configJson?.format === 'string' ? target.configJson.format : '{YYYY}{MM}{DD}-{0}'
+    autoNumberStart.value = typeof target.configJson?.startNumber === 'number' ? target.configJson.startNumber : 1
+    autoNumberError.value = ''
     if (form.fieldType === 'LOOKUP' || form.fieldType === 'REFERENCE') {
       void loadObjects()
     }
@@ -313,6 +333,9 @@ watch(visible, (open) => {
     referenceTargetFieldId.value = undefined
     lookupError.value = ''
     referenceError.value = ''
+    autoNumberFormat.value = '{YYYY}{MM}{DD}-{0}'
+    autoNumberStart.value = 1
+    autoNumberError.value = ''
   }
   formRef.value?.clearValidate()
 })
@@ -358,6 +381,14 @@ async function handleSubmit() {
     lookupError.value = ''
     configJson = null
     payloadRelationObjectId = relationObjectId.value
+  } else if (form.fieldType === 'AUTO_NUMBER') {
+    const format = autoNumberFormat.value.trim()
+    if (!format || !format.includes('{0}')) {
+      autoNumberError.value = '显示格式不能为空，且必须包含 {0} 序号占位符'
+      return
+    }
+    autoNumberError.value = ''
+    configJson = { format, startNumber: autoNumberStart.value }
   } else if (form.fieldType === 'REFERENCE') {
     if (!relationFieldId.value) {
       referenceError.value = '引用字段必须选择关联关系'
@@ -469,6 +500,19 @@ async function handleSubmit() {
         </el-select>
         <div v-if="isEdit" class="form-hint">字段类型创建后不可修改</div>
       </el-form-item>
+      <template v-if="form.fieldType === 'AUTO_NUMBER'">
+        <el-form-item label="显示格式" required>
+          <el-input v-model="autoNumberFormat" placeholder="例如：PO#({YYYY})({MM})({DD})-{0}" />
+          <div class="form-hint">
+            支持变量：{0} 序号（0 的个数决定最小位数，如 {000} → 001）、{YYYY}/{YY} 年、{MM} 月、{DD} 日
+          </div>
+          <div class="form-hint">格式预览：{{ autoNumberExample }}</div>
+        </el-form-item>
+        <el-form-item label="起始编号">
+          <el-input-number v-model="autoNumberStart" :min="1" controls-position="right" style="width: 100%" />
+          <div class="form-hint">首条记录使用的序号，仅创建字段时生效</div>
+        </el-form-item>
+      </template>
       <template v-if="form.fieldType === 'LOOKUP'">
         <el-form-item label="关联对象" required>
           <el-select
@@ -620,6 +664,7 @@ async function handleSubmit() {
           style="width: 100%"
         />
         <span v-else-if="form.fieldType === 'REFERENCE' || form.fieldType === 'LOOKUP'" class="form-hint">关联/引用字段不支持默认值</span>
+        <span v-else-if="form.fieldType === 'AUTO_NUMBER'" class="form-hint">保存后由系统按格式自动生成，无需填写</span>
       </el-form-item>
       <el-form-item label="排序">
         <el-input-number v-model="form.sort" :min="0" />

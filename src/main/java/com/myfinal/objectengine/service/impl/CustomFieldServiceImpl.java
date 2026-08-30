@@ -16,6 +16,7 @@ import com.myfinal.objectengine.dto.UpdateFieldRequest;
 import com.myfinal.objectengine.engine.FieldTypeRegistry;
 import com.myfinal.objectengine.enums.FieldType;
 import com.myfinal.objectengine.mapper.CustomFieldMapper;
+import com.myfinal.objectengine.mapper.CustomSequenceMapper;
 import com.myfinal.objectengine.mapper.CustomOptionMapper;
 import com.myfinal.objectengine.mapper.CustomOptionSetMapper;
 import com.myfinal.objectengine.service.CustomFieldService;
@@ -46,13 +47,16 @@ public class CustomFieldServiceImpl extends ServiceImpl<CustomFieldMapper, Custo
     private final CustomObjectService customObjectService;
     private final CustomOptionSetMapper customOptionSetMapper;
     private final CustomOptionMapper customOptionMapper;
+    private final CustomSequenceMapper customSequenceMapper;
 
     public CustomFieldServiceImpl(CustomObjectService customObjectService,
                                   CustomOptionSetMapper customOptionSetMapper,
-                                  CustomOptionMapper customOptionMapper) {
+                                  CustomOptionMapper customOptionMapper,
+                                  CustomSequenceMapper customSequenceMapper) {
         this.customObjectService = customObjectService;
         this.customOptionSetMapper = customOptionSetMapper;
         this.customOptionMapper = customOptionMapper;
+        this.customSequenceMapper = customSequenceMapper;
     }
 
     @Override
@@ -203,6 +207,11 @@ public class CustomFieldServiceImpl extends ServiceImpl<CustomFieldMapper, Custo
             .eq(CustomField::getReferenceFieldId, field.getId()));
         if (referencedCount > 0) {
             throw BusinessException.badRequest("该字段已被引用字段使用，无法删除。");
+        }
+        // 自动编号字段的取号序列一并清理
+        if ("AUTO_NUMBER".equals(field.getFieldType())) {
+            customSequenceMapper.delete(new LambdaQueryWrapper<com.myfinal.objectengine.domain.CustomSequence>()
+                .eq(com.myfinal.objectengine.domain.CustomSequence::getFieldId, field.getId()));
         }
         removeById(field.getId());
     }

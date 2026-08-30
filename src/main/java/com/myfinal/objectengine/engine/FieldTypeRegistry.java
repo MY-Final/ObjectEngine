@@ -9,12 +9,14 @@ import com.myfinal.objectengine.enums.FieldType;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -23,6 +25,11 @@ import java.util.regex.Pattern;
 public final class FieldTypeRegistry {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    /** 自动编号序号占位符：{0} / {00} / {000}，0 的个数决定最小位数 */
+    private static final Pattern SEQUENCE_PLACEHOLDER = Pattern.compile("\\{(0+)\\}");
 
     private static final Pattern TIME_PATTERN = Pattern.compile("^([01]\\d|2[0-3]):[0-5]\\d(:[0-5]\\d)?$");
 
@@ -43,11 +50,14 @@ public final class FieldTypeRegistry {
         REGISTRY.put(FieldType.MONEY, FieldTypeRegistry::requireNumberWithDigits);
         REGISTRY.put(FieldType.PERCENT, FieldTypeRegistry::requireNumberWithDigits);
         REGISTRY.put(FieldType.DATE, FieldTypeRegistry::requireDate);
+        REGISTRY.put(FieldType.DATETIME, FieldTypeRegistry::requireDateTime);
         REGISTRY.put(FieldType.SELECT, FieldTypeRegistry::requireOption);
         REGISTRY.put(FieldType.MULTI_SELECT, FieldTypeRegistry::requireOptionList);
         REGISTRY.put(FieldType.LOOKUP, FieldTypeRegistry::requireRecordReference);
         // REFERENCE 为运行时计算字段，不接受写入
         REGISTRY.put(FieldType.REFERENCE, FieldTypeRegistry::rejectComputedWrite);
+        // AUTO_NUMBER 由系统按格式生成，客户端只允许回传已生成的文本
+        REGISTRY.put(FieldType.AUTO_NUMBER, FieldTypeRegistry::requireString);
         REGISTRY.put(FieldType.BOOLEAN, FieldTypeRegistry::requireBoolean);
         REGISTRY.put(FieldType.TIME, FieldTypeRegistry::requireTime);
         REGISTRY.put(FieldType.PHONE, FieldTypeRegistry::requirePhone);
@@ -100,6 +110,16 @@ public final class FieldTypeRegistry {
         if (integerLength != null && scale != null && scale >= integerLength) {
             throw BusinessException.badRequest("字段【" + fieldName + "】小数位数必须小于整数长度");
         }
+        if (FieldType.AUTO_NUMBER.name().equals(fieldType)) {
+            String format = config.getString("format");
+            if (format == null || format.isBlank() || !format.contains("{0}")) {
+                throw BusinessException.badRequest("字段【" + fieldName + "】的显示格式必须包含 {0} 序号占位符");
+            }
+            Integer startNumber = config.getInteger("startNumber");
+            if (startNumber != null && startNumber < 1) {
+                throw BusinessException.badRequest("字段【" + fieldName + "】起始编号必须大于 0");
+            }
+        }
     }
 
     private static void requireText(CustomField field, Object value) {
@@ -114,6 +134,12 @@ public final class FieldTypeRegistry {
         }
         if (minLength != null && s.length() < minLength) {
             throw BusinessException.badRequest("字段【" + field.getFieldName() + "】长度不能少于 " + minLength + " 个字符");
+        }
+    }
+
+    private static void requireString(CustomField field, Object value) {
+        if (!(value instanceof String)) {
+            throw BusinessException.badRequest("字段【" + field.getFieldName() + "】必须为字符串");
         }
     }
 
@@ -148,6 +174,40 @@ public final class FieldTypeRegistry {
         } catch (DateTimeParseException e) {
             throw BusinessException.badRequest("字段【" + field.getFieldName() + "】必须为日期（yyyy-MM-dd）");
         }
+    }
+
+    private static void requireDateTime(CustomField field, Object value) {
+        if (!(value instanceof String s)) {
+            throw BusinessException.badRequest("字段【" + field.getFieldName() + "】必须为日期时间（yyyy-MM-dd HH:mm:ss）");
+        }
+        try {
+            LocalDateTime.parse(s.replace('T', ' '), DATETIME_FORMATTER);
+        } catch (DateTimeParseException e) {
+            throw BusinessException.badRequest("字段【" + field.getFieldName() + "】必须为日期时间（yyyy-MM-dd HH:mm:ss）");
+        }
+    }
+
+    /**
+     * 生成自动编号文本：{0}/{00}/{000} 按序号补位，{YYYY}/{YY}/{MM}/{DD} 按当前日期替换
+     */
+    public static String formatAutoNumber(CustomField field, long sequence) {
+        String format = parseConfig(field.getConfigJson()).getString("format");
+        if (format == null || format.isBlank()) {
+            format = "{0}";
+        }
+        Matcher matcher = SEQUENCE_PLACEHOLDER.matcher(format);
+        StringBuffer buffer = new StringBuffer();
+        while (matcher.find()) {
+            String replacement = String.format("%0" + matcher.group(1).length() + "d", sequence);
+            matcher.appendReplacement(buffer, Matcher.quoteReplacement(replacement));
+        }
+        matcher.appendTail(buffer);
+        LocalDateTime now = LocalDateTime.now();
+        return buffer.toString()
+            .replace("{YYYY}", String.valueOf(now.getYear()))
+            .replace("{YY}", String.valueOf(now.getYear()).substring(2))
+            .replace("{MM}", String.format("%02d", now.getMonthValue()))
+            .replace("{DD}", String.format("%02d", now.getDayOfMonth()));
     }
 
     private static void requireOption(CustomField field, Object value) {

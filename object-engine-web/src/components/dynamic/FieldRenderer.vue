@@ -65,6 +65,15 @@ const extraProps = computed<Record<string, unknown>>(() => {
       return { ...digitProps(2), placeholder: `请输入${name}` }
     case 'DATE':
       return { type: 'date', valueFormat: 'YYYY-MM-DD', placeholder: `请选择${name}`, style: 'width: 100%' }
+    case 'DATETIME':
+      return {
+        type: 'datetime',
+        valueFormat: 'YYYY-MM-DD HH:mm:ss',
+        placeholder: `请选择${name}`,
+        style: 'width: 100%',
+      }
+    case 'AUTO_NUMBER':
+      return { disabled: true, placeholder: '保存后由系统按格式自动生成' }
     case 'TIME':
       return { valueFormat: 'HH:mm:ss', placeholder: `请选择${name}`, style: 'width: 100%' }
     case 'SELECT':

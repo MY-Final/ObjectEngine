@@ -111,6 +111,9 @@ const display = computed<string>(() => {
   if (field.fieldType === 'DATE') {
     return String(value).replace(/T.*$/, '')
   }
+  if (field.fieldType === 'DATETIME') {
+    return String(value).replace('T', ' ')
+  }
   if (typeof value === 'object') {
     return JSON.stringify(value)
   }

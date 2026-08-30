@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.myfinal.objectengine.mapper.CustomSequenceMapper">
+
+    <resultMap id="BaseResultMap" type="com.myfinal.objectengine.domain.CustomSequence">
+            <id property="id" column="id" />
+            <result property="fieldId" column="field_id" />
+            <result property="currentValue" column="current_value" />
+            <result property="updatedAt" column="updated_at" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,field_id,current_value,updated_at
+    </sql>
+</mapper>

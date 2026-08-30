@@ -49,7 +49,7 @@ const rules = computed<FormRules>(() => {
     if (field.requiredFlag === 1) {
     // 选择类控件变更即触发校验，提示语用「请选择」
     const isChoice =
-      ['SELECT', 'MULTI_SELECT', 'DATE', 'TIME', 'BOOLEAN', 'LOOKUP'].includes(field.fieldType)
+      ['SELECT', 'MULTI_SELECT', 'DATE', 'DATETIME', 'TIME', 'BOOLEAN', 'LOOKUP'].includes(field.fieldType)
       rulesForField.push({
         required: true,
         message: isChoice ? `请选择${field.fieldName}` : `请输入${field.fieldName}`,
