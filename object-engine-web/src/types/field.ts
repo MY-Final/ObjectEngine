@@ -6,6 +6,7 @@ export type FieldType =
   | 'DATE'
   | 'SELECT'
   | 'MULTI_SELECT'
+  | 'LOOKUP'
   | 'REFERENCE'
   | 'BOOLEAN'
   | 'TIME'
@@ -50,6 +51,12 @@ export interface CustomField {
   configJson?: FieldConfig | null
   optionSource?: OptionSource | null
   optionSetId?: number | null
+  /** 关联对象ID（LOOKUP：目标对象；REFERENCE：由关联的 LOOKUP 字段推导） */
+  relationObjectId?: number | null
+  /** 关联的 LOOKUP 字段ID（REFERENCE 使用） */
+  relationFieldId?: number | null
+  /** 引用的目标字段ID（REFERENCE 使用） */
+  referenceFieldId?: number | null
   status: number
   createdAt: string
   updatedAt: string
@@ -70,6 +77,9 @@ export interface CreateFieldPayload {
   configJson?: FieldConfig | null
   optionSource?: OptionSource
   optionSetId?: number | null
+  relationObjectId?: number | null
+  relationFieldId?: number | null
+  referenceFieldId?: number | null
 }
 
 export interface UpdateFieldPayload {
@@ -85,5 +95,8 @@ export interface UpdateFieldPayload {
   configJson?: FieldConfig | null
   optionSource?: OptionSource
   optionSetId?: number | null
+  relationObjectId?: number | null
+  relationFieldId?: number | null
+  referenceFieldId?: number | null
   status?: number
 }

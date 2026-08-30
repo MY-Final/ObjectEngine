@@ -57,4 +57,19 @@ public class CreateFieldRequest {
      * 通用选项集ID（optionSource=GLOBAL 时必填）
      */
     private Long optionSetId;
+
+    /**
+     * 关联对象ID（LOOKUP：目标对象；REFERENCE：由关联的 LOOKUP 字段推导）
+     */
+    private Long relationObjectId;
+
+    /**
+     * 关联的 LOOKUP 字段ID（REFERENCE 使用，必须属于当前对象）
+     */
+    private Long relationFieldId;
+
+    /**
+     * 引用的目标字段ID（REFERENCE 使用，属于关联对象）
+     */
+    private Long referenceFieldId;
 }

@@ -45,7 +45,9 @@ public final class FieldTypeRegistry {
         REGISTRY.put(FieldType.DATE, FieldTypeRegistry::requireDate);
         REGISTRY.put(FieldType.SELECT, FieldTypeRegistry::requireOption);
         REGISTRY.put(FieldType.MULTI_SELECT, FieldTypeRegistry::requireOptionList);
-        REGISTRY.put(FieldType.REFERENCE, FieldTypeRegistry::requireReference);
+        REGISTRY.put(FieldType.LOOKUP, FieldTypeRegistry::requireRecordReference);
+        // REFERENCE 为运行时计算字段，不接受写入
+        REGISTRY.put(FieldType.REFERENCE, FieldTypeRegistry::rejectComputedWrite);
         REGISTRY.put(FieldType.BOOLEAN, FieldTypeRegistry::requireBoolean);
         REGISTRY.put(FieldType.TIME, FieldTypeRegistry::requireTime);
         REGISTRY.put(FieldType.PHONE, FieldTypeRegistry::requirePhone);
@@ -159,7 +161,7 @@ public final class FieldTypeRegistry {
     }
 
     /**
-     * 提取关联字段值中的记录 ID：接受数字或 { "recordId": 数字 } 结构
+     * 提取关联字段值中的记录 ID：接受数字或 { "recordId": 数字 } 结构（历史快照数据兼容）
      */
     public static Long referenceRecordId(CustomField field, Object value) {
         if (value instanceof Number number) {
@@ -171,8 +173,12 @@ public final class FieldTypeRegistry {
         throw BusinessException.badRequest("字段【" + field.getFieldName() + "】必须是关联的记录");
     }
 
-    private static void requireReference(CustomField field, Object value) {
+    private static void requireRecordReference(CustomField field, Object value) {
         referenceRecordId(field, value);
+    }
+
+    private static void rejectComputedWrite(CustomField field, Object value) {
+        throw BusinessException.badRequest("字段【" + field.getFieldName() + "】为引用字段，由系统按关联记录自动计算，不支持写入");
     }
 
     private static void requireOptionList(CustomField field, Object value) {

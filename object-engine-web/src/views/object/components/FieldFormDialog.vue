@@ -3,7 +3,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import { createField, updateField } from '@/api/field'
+import { createField, updateField, listFields } from '@/api/field'
 import { listEnabledOptions, listOptionSets } from '@/api/optionSet'
 import { listObjects } from '@/api/object'
 import type {
@@ -17,7 +17,25 @@ import type {
 import type { CustomObject } from '@/types/object'
 import type { OptionSet, OptionSetItem } from '@/types/optionSet'
 import { API_NAME_HINT, API_NAME_PATTERN, FIELD_TYPE_OPTIONS } from '@/constants/field'
+import { objectApiNameById } from '@/utils/record'
 import SelectOptionEditor from './SelectOptionEditor.vue'
+
+/** REFERENCE 可引用的字段类型（排除 LOOKUP / REFERENCE，避免链式引用） */
+const REFERENCE_ALLOWED_TYPES: string[] = [
+  'TEXT',
+  'TEXTAREA',
+  'NUMBER',
+  'MONEY',
+  'PERCENT',
+  'DATE',
+  'TIME',
+  'SELECT',
+  'MULTI_SELECT',
+  'BOOLEAN',
+  'PHONE',
+  'EMAIL',
+  'URL',
+]
 
 const props = defineProps<{
   objectApiName: string
@@ -116,16 +134,68 @@ function handleOptionSourceChange(source: 'LOCAL' | 'GLOBAL') {
   }
 }
 
+// —— 关联字段（LOOKUP）/ 引用字段（REFERENCE）配置 ——
+const relationObjectId = ref<number>()
+const relationFieldId = ref<number>()
+const referenceTargetFieldId = ref<number>()
+const lookupError = ref('')
+const referenceError = ref('')
+/** 当前对象的 LOOKUP 字段（REFERENCE 的「关联关系」候选） */
+const currentLookupFields = ref<CustomField[]>([])
+/** 关联对象的字段（REFERENCE 的「引用字段」候选） */
+const targetFields = ref<CustomField[]>([])
+
+async function loadCurrentLookupFields() {
+  try {
+    const fields = await listFields(props.objectApiName)
+    currentLookupFields.value = fields.filter(
+      (field) => field.fieldType === 'LOOKUP' && field.status === 1,
+    )
+  } catch {
+    currentLookupFields.value = []
+  }
+}
+
+async function handleRelationFieldChange(relationFieldId: number) {
+  const lookupField = currentLookupFields.value.find((field) => field.id === relationFieldId)
+  relationObjectId.value = lookupField?.relationObjectId ?? undefined
+  referenceTargetFieldId.value = undefined
+  targetFields.value = []
+  const targetApiName = await objectApiNameById(relationObjectId.value ?? 0)
+  if (!targetApiName) return
+  try {
+    const fields = await listFields(targetApiName)
+    targetFields.value = fields.filter(
+      (field) => field.status === 1 && REFERENCE_ALLOWED_TYPES.includes(field.fieldType),
+    )
+  } catch {
+    targetFields.value = []
+  }
+}
+
+async function loadTargetFieldsFor(relationObjectId?: number | null) {
+  targetFields.value = []
+  if (!relationObjectId) return
+  const targetApiName = await objectApiNameById(relationObjectId)
+  if (!targetApiName) return
+  try {
+    const fields = await listFields(targetApiName)
+    targetFields.value = fields.filter(
+      (field) => field.status === 1 && REFERENCE_ALLOWED_TYPES.includes(field.fieldType),
+    )
+  } catch {
+    targetFields.value = []
+  }
+}
+
 watch(optionSetId, (id) => {
   if (optionSource.value === 'GLOBAL') {
     void loadPreview(id)
   }
 })
 
-// —— 关联关系（REFERENCE）：选择业务对象 ——
-const referenceTarget = ref<string>()
+// —— LOOKUP / REFERENCE 的业务对象候选 ——
 const enabledObjects = ref<CustomObject[]>([])
-const referenceError = ref('')
 const objectsLoaded = ref(false)
 
 async function loadObjects() {
@@ -142,8 +212,11 @@ async function loadObjects() {
 watch(
   () => form.fieldType,
   (fieldType) => {
-    if (fieldType === 'REFERENCE') {
+    if (fieldType === 'LOOKUP' || fieldType === 'REFERENCE') {
       void loadObjects()
+    }
+    if (fieldType === 'REFERENCE') {
+      void loadCurrentLookupFields()
     }
   },
 )
@@ -196,13 +269,17 @@ watch(visible, (open) => {
     form.status = target.status
     options.value = (target.configJson?.options ?? []).map((option) => ({ ...option }))
     loadTypeConfig(target.configJson)
-    referenceTarget.value =
-      typeof target.configJson?.targetObjectApiName === 'string'
-        ? target.configJson.targetObjectApiName
-        : undefined
+    referenceTargetFieldId.value = target.referenceFieldId ?? undefined
+    relationFieldId.value = target.relationFieldId ?? undefined
+    relationObjectId.value = target.relationObjectId ?? undefined
+    lookupError.value = ''
     referenceError.value = ''
-    if (form.fieldType === 'REFERENCE') {
+    if (form.fieldType === 'LOOKUP' || form.fieldType === 'REFERENCE') {
       void loadObjects()
+    }
+    if (form.fieldType === 'REFERENCE') {
+      void loadCurrentLookupFields()
+      void loadTargetFieldsFor(target.relationObjectId)
     }
     optionSource.value = target.optionSource === 'GLOBAL' ? 'GLOBAL' : 'LOCAL'
     optionSetId.value = target.optionSetId ?? undefined
@@ -231,7 +308,10 @@ watch(visible, (open) => {
     optionSetId.value = undefined
     globalOptions.value = []
     optionSetError.value = ''
-    referenceTarget.value = undefined
+    relationObjectId.value = undefined
+    relationFieldId.value = undefined
+    referenceTargetFieldId.value = undefined
+    lookupError.value = ''
     referenceError.value = ''
   }
   formRef.value?.clearValidate()
@@ -246,6 +326,9 @@ async function handleSubmit() {
   let configJson: FieldConfig | null = null
   let payloadSource: 'LOCAL' | 'GLOBAL' | undefined
   let payloadSetId: number | null | undefined
+  let payloadRelationObjectId: number | null | undefined
+  let payloadRelationFieldId: number | null | undefined
+  let payloadReferenceFieldId: number | null | undefined
   if (isOptionType.value) {
     payloadSource = optionSource.value
     payloadSetId = optionSource.value === 'GLOBAL' ? (optionSetId.value ?? null) : null
@@ -267,13 +350,30 @@ async function handleSubmit() {
       }
       configJson = { options: trimmed }
     }
+  } else if (form.fieldType === 'LOOKUP') {
+    if (!relationObjectId.value) {
+      lookupError.value = '关联关系必须选择关联对象'
+      return
+    }
+    lookupError.value = ''
+    configJson = null
+    payloadRelationObjectId = relationObjectId.value
   } else if (form.fieldType === 'REFERENCE') {
-    if (!referenceTarget.value) {
-      referenceError.value = '请选择要关联的业务对象'
+    if (!relationFieldId.value) {
+      referenceError.value = '引用字段必须选择关联关系'
+      return
+    }
+    if (!referenceTargetFieldId.value) {
+      referenceError.value = '引用字段必须选择引用字段'
       return
     }
     referenceError.value = ''
-    configJson = { targetObjectApiName: referenceTarget.value }
+    configJson = null
+    // 关联对象由所选 LOOKUP 字段推导，后端会再次校验
+    payloadRelationObjectId =
+      currentLookupFields.value.find((field) => field.id === relationFieldId.value)?.relationObjectId ?? null
+    payloadRelationFieldId = relationFieldId.value
+    payloadReferenceFieldId = referenceTargetFieldId.value
   } else if (isTextLike.value || isNumeric.value) {
     configJson = {}
     if (typeConfig.maxLength != null) configJson.maxLength = typeConfig.maxLength
@@ -306,6 +406,9 @@ async function handleSubmit() {
         configJson,
         optionSource: payloadSource,
         optionSetId: payloadSetId ?? null,
+        relationObjectId: payloadRelationObjectId ?? null,
+        relationFieldId: payloadRelationFieldId ?? null,
+        referenceFieldId: payloadReferenceFieldId ?? null,
         status: form.status,
       }
       await updateField(props.objectApiName, props.field.apiName, payload)
@@ -326,6 +429,9 @@ async function handleSubmit() {
         configJson,
         optionSource: payloadSource,
         optionSetId: payloadSetId ?? null,
+        relationObjectId: payloadRelationObjectId ?? null,
+        relationFieldId: payloadRelationFieldId ?? null,
+        referenceFieldId: payloadReferenceFieldId ?? null,
       }
       await createField(props.objectApiName, payload)
       ElMessage.success('创建成功')
@@ -363,10 +469,10 @@ async function handleSubmit() {
         </el-select>
         <div v-if="isEdit" class="form-hint">字段类型创建后不可修改</div>
       </el-form-item>
-      <template v-if="form.fieldType === 'REFERENCE'">
-        <el-form-item label="业务对象" required>
+      <template v-if="form.fieldType === 'LOOKUP'">
+        <el-form-item label="关联对象" required>
           <el-select
-            v-model="referenceTarget"
+            v-model="relationObjectId"
             filterable
             :disabled="isEdit"
             placeholder="选择要关联的业务对象"
@@ -374,14 +480,55 @@ async function handleSubmit() {
           >
             <el-option
               v-for="object in enabledObjects"
-              :key="object.apiName"
+              :key="object.id"
               :label="`${object.objectName}（${object.apiName}）`"
-              :value="object.apiName"
+              :value="object.id"
+            />
+          </el-select>
+          <div v-if="lookupError" class="options-error">{{ lookupError }}</div>
+          <div v-else-if="isEdit" class="form-hint">关联对象创建后不可修改</div>
+          <div v-else class="form-hint">表单中将可搜索并关联该对象的数据记录，列表展示记录名称</div>
+        </el-form-item>
+      </template>
+      <template v-if="form.fieldType === 'REFERENCE'">
+        <el-form-item label="关联关系" required>
+          <el-select
+            v-model="relationFieldId"
+            filterable
+            :disabled="isEdit"
+            placeholder="选择本对象的关联字段"
+            style="width: 100%"
+            @change="handleRelationFieldChange"
+          >
+            <el-option
+              v-for="field in currentLookupFields"
+              :key="field.id"
+              :label="`${field.fieldName}（${field.apiName}）`"
+              :value="field.id"
+            />
+          </el-select>
+          <div v-if="isEdit" class="form-hint">关联关系创建后不可修改</div>
+          <div v-else-if="currentLookupFields.length === 0" class="form-hint warning-text">
+            本对象还没有「关联关系」字段，请先创建
+          </div>
+        </el-form-item>
+        <el-form-item label="引用字段" required>
+          <el-select
+            v-model="referenceTargetFieldId"
+            filterable
+            :disabled="isEdit"
+            :placeholder="targetFields.length ? '选择要引用的字段' : '请先选择关联关系'"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="field in targetFields"
+              :key="field.id"
+              :label="`${field.fieldName}（${field.apiName}）`"
+              :value="field.id"
             />
           </el-select>
           <div v-if="referenceError" class="options-error">{{ referenceError }}</div>
-          <div v-else-if="isEdit" class="form-hint">业务对象创建后不可修改</div>
-          <div v-else class="form-hint">表单中将可搜索并关联该对象的数据记录，列表展示记录名称</div>
+          <div v-else class="form-hint">表单与列表将展示关联记录中该字段的值，由系统自动计算</div>
         </el-form-item>
       </template>
       <template v-if="isTextLike">
@@ -472,7 +619,7 @@ async function handleSubmit() {
           placeholder="默认时间（可选）"
           style="width: 100%"
         />
-        <span v-else-if="form.fieldType === 'REFERENCE'" class="form-hint">关联字段不支持默认值</span>
+        <span v-else-if="form.fieldType === 'REFERENCE' || form.fieldType === 'LOOKUP'" class="form-hint">关联/引用字段不支持默认值</span>
       </el-form-item>
       <el-form-item label="排序">
         <el-input-number v-model="form.sort" :min="0" />
@@ -547,5 +694,9 @@ async function handleSubmit() {
   margin-top: 4px;
   font-size: 12px;
   color: #f56c6c;
+}
+
+.warning-text {
+  color: #e6a23c;
 }
 </style>

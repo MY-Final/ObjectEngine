@@ -38,6 +38,11 @@ public class CustomFieldServiceImpl extends ServiceImpl<CustomFieldMapper, Custo
     private static final String OPTION_SOURCE_LOCAL = "LOCAL";
     private static final String OPTION_SOURCE_GLOBAL = "GLOBAL";
 
+    /** REFERENCE 可引用的字段类型：排除 LOOKUP / REFERENCE，避免链式引用 */
+    private static final Set<String> REFERENCE_ALLOWED_TYPES = Set.of(
+        "TEXT", "TEXTAREA", "NUMBER", "MONEY", "PERCENT", "DATE", "TIME",
+        "SELECT", "MULTI_SELECT", "BOOLEAN", "PHONE", "EMAIL", "URL");
+
     private final CustomObjectService customObjectService;
     private final CustomOptionSetMapper customOptionSetMapper;
     private final CustomOptionMapper customOptionMapper;
@@ -92,6 +97,7 @@ public class CustomFieldServiceImpl extends ServiceImpl<CustomFieldMapper, Custo
         }
         Long optionSetId = normalizeOptionSetId(fieldType.name(), request.getOptionSource(),
             request.getOptionSetId());
+        RelationConfig relation = normalizeRelation(object.getId(), fieldType.name(), request);
         FieldTypeRegistry.validateConfig(fieldType.name(), request.getFieldName(), request.getConfigJson(),
             optionSetId == null);
 
@@ -111,6 +117,9 @@ public class CustomFieldServiceImpl extends ServiceImpl<CustomFieldMapper, Custo
         field.setConfigJson(JsonUtils.write(request.getConfigJson()));
         field.setOptionSource(optionSetId != null ? OPTION_SOURCE_GLOBAL : OPTION_SOURCE_LOCAL);
         field.setOptionSetId(optionSetId);
+        field.setRelationObjectId(relation.relationObjectId());
+        field.setRelationFieldId(relation.relationFieldId());
+        field.setReferenceFieldId(relation.referenceFieldId());
         field.setStatus(1);
         field.setCreatedAt(new Date());
         field.setUpdatedAt(new Date());
@@ -164,6 +173,7 @@ public class CustomFieldServiceImpl extends ServiceImpl<CustomFieldMapper, Custo
             field.setOptionSource(optionSetId != null ? OPTION_SOURCE_GLOBAL : OPTION_SOURCE_LOCAL);
             field.setOptionSetId(optionSetId);
         }
+        applyRelationUpdate(object.getId(), field, request);
         boolean enforceOptions = !OPTION_SOURCE_GLOBAL.equals(field.getOptionSource());
         if (request.getConfigJson() != null) {
             FieldTypeRegistry.validateConfig(field.getFieldType(), field.getFieldName(), request.getConfigJson(),
@@ -179,7 +189,119 @@ public class CustomFieldServiceImpl extends ServiceImpl<CustomFieldMapper, Custo
     public void delete(String objectApiName, String fieldApiName) {
         CustomObject object = customObjectService.requireByApiName(objectApiName);
         CustomField field = requireByApiName(object.getId(), fieldApiName);
+        // LOOKUP 被 REFERENCE 字段引用时禁止删除（规则：引用字段建立在关联字段之上）
+        if ("LOOKUP".equals(field.getFieldType())) {
+            long dependents = count(new LambdaQueryWrapper<CustomField>()
+                .eq(CustomField::getRelationFieldId, field.getId())
+                .eq(CustomField::getFieldType, "REFERENCE"));
+            if (dependents > 0) {
+                throw BusinessException.badRequest("该关联关系已被引用字段使用，无法删除。");
+            }
+        }
+        // 作为引用目标字段被 REFERENCE 使用时禁止删除
+        long referencedCount = count(new LambdaQueryWrapper<CustomField>()
+            .eq(CustomField::getReferenceFieldId, field.getId()));
+        if (referencedCount > 0) {
+            throw BusinessException.badRequest("该字段已被引用字段使用，无法删除。");
+        }
         removeById(field.getId());
+    }
+
+    /**
+     * 关联配置归一化（创建字段）：LOOKUP 必须指向启用中的对象；
+     * REFERENCE 必须基于本对象启用中的 LOOKUP 字段，引用字段必须属于关联对象且类型允许
+     */
+    private RelationConfig normalizeRelation(Long objectId, String fieldType, CreateFieldRequest request) {
+        return switch (fieldType) {
+            case "LOOKUP" -> {
+                if (request.getRelationObjectId() == null) {
+                    throw BusinessException.badRequest("关联关系必须选择关联对象");
+                }
+                validateRelationTarget(request.getRelationObjectId());
+                yield new RelationConfig(request.getRelationObjectId(), null, null);
+            }
+            case "REFERENCE" -> {
+                if (request.getRelationFieldId() == null) {
+                    throw BusinessException.badRequest("引用字段必须选择关联关系");
+                }
+                if (request.getReferenceFieldId() == null) {
+                    throw BusinessException.badRequest("引用字段必须选择引用字段");
+                }
+                CustomField lookupField = getById(request.getRelationFieldId());
+                if (lookupField == null || !lookupField.getObjectId().equals(objectId)
+                    || !"LOOKUP".equals(lookupField.getFieldType())
+                    || !Integer.valueOf(1).equals(lookupField.getStatus())) {
+                    throw BusinessException.badRequest("关联关系无效，必须选择本对象启用中的关联字段");
+                }
+                if (lookupField.getRelationObjectId() == null) {
+                    throw BusinessException.badRequest("所选关联关系未配置关联对象");
+                }
+                CustomField targetField = getById(request.getReferenceFieldId());
+                if (targetField == null || !targetField.getObjectId().equals(lookupField.getRelationObjectId())
+                    || !Integer.valueOf(1).equals(targetField.getStatus())) {
+                    throw BusinessException.badRequest("引用字段无效，必须为关联对象启用中的字段");
+                }
+                if (!REFERENCE_ALLOWED_TYPES.contains(targetField.getFieldType())) {
+                    throw BusinessException.badRequest("该字段类型不支持被引用");
+                }
+                yield new RelationConfig(lookupField.getRelationObjectId(), request.getRelationFieldId(),
+                    request.getReferenceFieldId());
+            }
+            default -> {
+                if (request.getRelationObjectId() != null || request.getRelationFieldId() != null
+                    || request.getReferenceFieldId() != null) {
+                    throw BusinessException.badRequest("仅关联/引用字段支持关联配置");
+                }
+                yield new RelationConfig(null, null, null);
+            }
+        };
+    }
+
+    /** 编辑字段的关联配置保护：LOOKUP 被引用时禁止换对象；REFERENCE 的关联配置创建后不可修改 */
+    private void applyRelationUpdate(Long objectId, CustomField field, UpdateFieldRequest request) {
+        boolean touchesRelation = request.getRelationObjectId() != null
+            || request.getRelationFieldId() != null
+            || request.getReferenceFieldId() != null;
+        if (!touchesRelation) {
+            return;
+        }
+        switch (field.getFieldType()) {
+            case "LOOKUP" -> {
+                if (request.getRelationObjectId() != null
+                    && !request.getRelationObjectId().equals(field.getRelationObjectId())) {
+                    long dependents = count(new LambdaQueryWrapper<CustomField>()
+                        .eq(CustomField::getRelationFieldId, field.getId())
+                        .eq(CustomField::getFieldType, "REFERENCE"));
+                    if (dependents > 0) {
+                        throw BusinessException.badRequest("该关联关系已被引用字段使用，无法调整关联对象");
+                    }
+                    validateRelationTarget(request.getRelationObjectId());
+                    field.setRelationObjectId(request.getRelationObjectId());
+                }
+            }
+            case "REFERENCE" -> {
+                boolean changed =
+                    (request.getRelationFieldId() != null && !request.getRelationFieldId().equals(field.getRelationFieldId()))
+                        || (request.getReferenceFieldId() != null && !request.getReferenceFieldId().equals(field.getReferenceFieldId()));
+                if (changed) {
+                    throw BusinessException.badRequest("引用字段的关联配置创建后不可修改");
+                }
+            }
+            default -> throw BusinessException.badRequest("仅关联/引用字段支持关联配置");
+        }
+    }
+
+    private void validateRelationTarget(Long relationObjectId) {
+        CustomObject target = customObjectService.getById(relationObjectId);
+        if (target == null) {
+            throw BusinessException.badRequest("关联对象不存在：" + relationObjectId);
+        }
+        if (!Integer.valueOf(1).equals(target.getStatus())) {
+            throw BusinessException.badRequest("关联对象已停用：" + target.getObjectName());
+        }
+    }
+
+    private record RelationConfig(Long relationObjectId, Long relationFieldId, Long referenceFieldId) {
     }
 
     /**

@@ -22,6 +22,21 @@ public class FieldVO {
     private Object configJson;
     private String optionSource;
     private Long optionSetId;
+
+    /**
+     * 关联对象ID（LOOKUP：目标对象；REFERENCE：由关联的 LOOKUP 字段推导）
+     */
+    private Long relationObjectId;
+
+    /**
+     * 关联的 LOOKUP 字段ID（REFERENCE 使用，必须属于当前对象）
+     */
+    private Long relationFieldId;
+
+    /**
+     * 引用的目标字段ID（REFERENCE 使用，属于关联对象）
+     */
+    private Long referenceFieldId;
     private Integer status;
 
     public static FieldVO from(CustomField entity) {
@@ -41,6 +56,9 @@ public class FieldVO {
         vo.setConfigJson(JsonUtils.parse(entity.getConfigJson()));
         vo.setOptionSource(entity.getOptionSource());
         vo.setOptionSetId(entity.getOptionSetId());
+        vo.setRelationObjectId(entity.getRelationObjectId());
+        vo.setRelationFieldId(entity.getRelationFieldId());
+        vo.setReferenceFieldId(entity.getReferenceFieldId());
         vo.setStatus(entity.getStatus());
         return vo;
     }

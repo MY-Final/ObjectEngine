@@ -175,7 +175,12 @@ defineExpose({ refresh })
     />
 
     <el-dialog v-model="editVisible" title="编辑记录" width="560px">
-      <DynamicForm ref="editFormRef" v-model="editModel" :fields="fields" />
+      <DynamicForm
+        ref="editFormRef"
+        v-model="editModel"
+        :fields="fields"
+        :displays="editingRecord?.displays ?? null"
+      />
       <template #footer>
         <el-button @click="editVisible = false">取消</el-button>
         <el-button type="primary" :loading="editSubmitting" @click="handleEditSubmit">保存</el-button>

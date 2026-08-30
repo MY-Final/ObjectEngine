@@ -27,7 +27,7 @@ const emit = defineEmits<{ delete: [record: CustomRecord]; edit: [record: Custom
       show-overflow-tooltip
     >
       <template #default="{ row }">
-        <FieldValue :field="field" :value="row.data[field.apiName]" />
+        <FieldValue :field="field" :value="row.data[field.apiName]" :record="row" />
       </template>
     </el-table-column>
     <el-table-column label="操作" width="120" fixed="right">
