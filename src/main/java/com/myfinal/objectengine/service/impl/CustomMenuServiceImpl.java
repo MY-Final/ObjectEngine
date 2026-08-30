@@ -117,6 +117,10 @@ public class CustomMenuServiceImpl extends ServiceImpl<CustomMenuMapper, CustomM
                 throw BusinessException.badRequest("该菜单存在子菜单，请先删除子菜单");
             }
         }
+        // 对象菜单与自定义对象生命周期绑定：对象还在时不允许单独删除，删除对象时级联移除
+        if ("OBJECT".equals(menu.getMenuType()) && objectExists(menu.getObjectApiName())) {
+            throw BusinessException.badRequest("该菜单由自定义对象生成，请删除对应对象后自动移除");
+        }
         removeById(id);
     }
 
@@ -168,9 +172,7 @@ public class CustomMenuServiceImpl extends ServiceImpl<CustomMenuMapper, CustomM
                 throw BusinessException.badRequest("OBJECT 菜单必须关联自定义对象");
             }
             // 应用层校验对象存在，不建外键（规范第十三节）
-            long objectCount = customObjectService.count(
-                new LambdaQueryWrapper<CustomObject>().eq(CustomObject::getApiName, objectApiName));
-            if (objectCount == 0) {
+            if (!objectExists(objectApiName)) {
                 throw BusinessException.badRequest("关联的自定义对象不存在：" + objectApiName);
             }
             // routePath 未填写时按约定自动生成
@@ -214,6 +216,14 @@ public class CustomMenuServiceImpl extends ServiceImpl<CustomMenuMapper, CustomM
         if (value == null || (value != 0 && value != 1)) {
             throw BusinessException.badRequest(label + "只能为 0 或 1");
         }
+    }
+
+    private boolean objectExists(String objectApiName) {
+        if (objectApiName == null || objectApiName.isBlank()) {
+            return false;
+        }
+        return customObjectService.count(
+            new LambdaQueryWrapper<CustomObject>().eq(CustomObject::getApiName, objectApiName)) > 0;
     }
 
     private CustomMenu requireEntity(Long id) {

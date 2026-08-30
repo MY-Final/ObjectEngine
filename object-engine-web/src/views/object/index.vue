@@ -4,9 +4,11 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { deleteObject, listObjects, updateObject } from '@/api/object'
 import type { CustomObject } from '@/types/object'
+import { useAppStore } from '@/stores/app'
 import ObjectFormDialog from './components/ObjectFormDialog.vue'
 
 const router = useRouter()
+const appStore = useAppStore()
 
 const loading = ref(false)
 const records = ref<CustomObject[]>([])
@@ -91,8 +93,10 @@ function openEdit(row: CustomObject) {
   dialogVisible.value = true
 }
 
-function handleSaved() {
-  void load()
+async function handleSaved() {
+  await load()
+  // 新建对象会自动注册导航菜单，同步刷新侧边栏
+  void appStore.loadMenus()
 }
 
 async function handleDelete(row: CustomObject) {
