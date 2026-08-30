@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +46,34 @@ public class CustomMenuServiceImpl extends ServiceImpl<CustomMenuMapper, CustomM
             .eq(query.getVisible() != null, CustomMenu::getVisible, query.getVisible())
             .orderByAsc(CustomMenu::getSort)
             .orderByAsc(CustomMenu::getId);
-        return list(wrapper).stream().map(MenuVO::from).toList();
+        List<MenuVO> vos = list(wrapper).stream().map(MenuVO::from).toList();
+        fillObjectStatus(vos);
+        return vos;
+    }
+
+    /** OBJECT 菜单补充关联对象状态，管理端据此展示有效状态（对象菜单状态由对象控制） */
+    private void fillObjectStatus(List<MenuVO> vos) {
+        Map<String, Integer> statusMap = objectStatusMapByApiName(vos.stream()
+            .filter(vo -> "OBJECT".equals(vo.getMenuType()) && vo.getObjectApiName() != null)
+            .map(MenuVO::getObjectApiName)
+            .toList());
+        for (MenuVO vo : vos) {
+            if ("OBJECT".equals(vo.getMenuType())) {
+                vo.setObjectStatus(statusMap.get(vo.getObjectApiName()));
+            }
+        }
+    }
+
+    private Map<String, Integer> objectStatusMapByApiName(List<String> apiNames) {
+        Map<String, Integer> result = new HashMap<>();
+        if (apiNames.isEmpty()) {
+            return result;
+        }
+        for (CustomObject object : customObjectService.list(
+            new LambdaQueryWrapper<CustomObject>().in(CustomObject::getApiName, apiNames))) {
+            result.put(object.getApiName(), object.getStatus());
+        }
+        return result;
     }
 
     @Override
@@ -56,6 +84,15 @@ public class CustomMenuServiceImpl extends ServiceImpl<CustomMenuMapper, CustomM
             .eq(CustomMenu::getVisible, 1)
             .orderByAsc(CustomMenu::getSort)
             .orderByAsc(CustomMenu::getId));
+        // 对象菜单与对象生命周期联动：对象停用或已不存在时不出现在导航中
+        Map<String, Integer> objectStatusMap = objectStatusMapByApiName(menus.stream()
+            .filter(menu -> "OBJECT".equals(menu.getMenuType()) && menu.getObjectApiName() != null)
+            .map(CustomMenu::getObjectApiName)
+            .toList());
+        menus = menus.stream()
+            .filter(menu -> !"OBJECT".equals(menu.getMenuType())
+                || Integer.valueOf(1).equals(objectStatusMap.get(menu.getObjectApiName())))
+            .toList();
         Map<Long, MenuTreeVO> nodeMap = new LinkedHashMap<>();
         for (CustomMenu menu : menus) {
             nodeMap.put(menu.getId(), MenuTreeVO.from(menu));
@@ -128,6 +165,10 @@ public class CustomMenuServiceImpl extends ServiceImpl<CustomMenuMapper, CustomM
     public void updateStatus(Long id, Integer status) {
         requireFlagValue(status, "状态");
         CustomMenu menu = requireEntity(id);
+        // 对象菜单的有效状态由关联对象控制，启停只能到对象管理操作
+        if ("OBJECT".equals(menu.getMenuType())) {
+            throw BusinessException.badRequest("对象菜单状态由关联对象控制，请在对象管理中启用/停用");
+        }
         menu.setStatus(status);
         menu.setUpdatedAt(new Date());
         updateById(menu);

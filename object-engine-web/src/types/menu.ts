@@ -32,6 +32,8 @@ export interface MenuItem {
   remark?: string | null
   createdAt: string
   updatedAt: string
+  /** 关联对象状态（仅 OBJECT 菜单有值）：0停用 1启用，对象不存在时为 null */
+  objectStatus?: number | null
 }
 
 /** 管理端菜单树：扁平列表按 parentId 组装 */

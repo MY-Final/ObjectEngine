@@ -63,6 +63,8 @@ async function handleStatusChange(row: CustomObject) {
       status: row.status,
     })
     ElMessage.success(row.status === 1 ? '已启用' : '已停用')
+    // 对象菜单随对象状态联动显示，同步刷新侧边栏
+    void appStore.loadMenus()
   } catch {
     row.status = row.status === 1 ? 0 : 1
   }

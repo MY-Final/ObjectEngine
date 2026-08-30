@@ -26,6 +26,12 @@ public class MenuVO {
     private String createdAt;
     private String updatedAt;
 
+    /**
+     * 关联对象状态（仅 OBJECT 菜单有值）：0停用 1启用，对象已删除时为 null。
+     * 对象菜单的有效状态由它派生，菜单管理侧不允许单独启停
+     */
+    private Integer objectStatus;
+
     public static MenuVO from(CustomMenu entity) {
         MenuVO vo = new MenuVO();
         vo.setId(entity.getId());

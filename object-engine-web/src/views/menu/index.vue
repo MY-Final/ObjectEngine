@@ -93,8 +93,12 @@ const parentOptions = computed<MenuParentOption[]>(() => [
 /** 新建时默认排在最后 */
 const defaultSort = computed(() => Math.max(0, ...items.value.map((item) => item.sort)) + 1)
 
-async function handleStatusChange(row: MenuTree) {
-  try {
+/** OBJECT 菜单的有效状态 = 菜单启用且关联对象启用（对象停用/已删除时视为停用） */
+function effectiveStatus(row: MenuTree): number {
+  return row.status === 1 && row.objectStatus === 1 ? 1 : 0
+}
+
+async function handleStatusChange(row: MenuTree) {  try {
     await updateMenuStatus(row.id, row.status)
     ElMessage.success(row.status === 1 ? '已启用' : '已停用')
   } catch {
@@ -236,7 +240,16 @@ onMounted(() => {
       <el-table-column prop="sort" label="排序" width="70" align="center" />
       <el-table-column label="状态" width="90" align="center">
         <template #default="{ row }">
+          <!-- 对象菜单的有效状态由关联对象控制，锁定展示 -->
+          <el-tooltip
+            v-if="row.menuType === 'OBJECT'"
+            content="状态由关联对象控制，请在对象管理中启用/停用"
+            placement="top"
+          >
+            <el-switch :model-value="effectiveStatus(row)" disabled />
+          </el-tooltip>
           <el-switch
+            v-else
             v-model="row.status"
             :active-value="1"
             :inactive-value="0"

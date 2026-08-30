@@ -223,7 +223,9 @@ async function handleSubmit() {
         <el-input v-model="form.component" placeholder="预留字段，当前导航未使用" />
       </el-form-item>
       <el-form-item v-if="isEdit" label="状态">
+        <span v-if="form.menuType === 'OBJECT'" class="form-hint">状态由关联对象控制，请在对象管理中启用/停用</span>
         <el-switch
+          v-else
           v-model="form.status"
           :active-value="1"
           :inactive-value="0"
