@@ -7,3 +7,8 @@ export interface CustomRecord {
   createdAt: string
   updatedAt: string
 }
+
+/** 列表筛选条件：第一版只有关键字，后续按需扩展字段级筛选 */
+export interface RecordFilterQuery {
+  keyword: string
+}

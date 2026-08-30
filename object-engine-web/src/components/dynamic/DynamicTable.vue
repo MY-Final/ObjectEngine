@@ -32,14 +32,17 @@ const emit = defineEmits<{ delete: [record: CustomRecord] }>()
     </el-table-column>
     <el-table-column label="操作" width="90" fixed="right">
       <template #default="{ row }">
-        <el-button
-          link
-          type="danger"
-          :loading="deletingId === row.id"
-          @click="emit('delete', row)"
-        >
-          删除
-        </el-button>
+        <!-- 默认提供删除；需要扩展编辑/复制等操作时用 #actions 覆盖 -->
+        <slot name="actions" :row="row">
+          <el-button
+            link
+            type="danger"
+            :loading="deletingId === row.id"
+            @click="emit('delete', row)"
+          >
+            删除
+          </el-button>
+        </slot>
       </template>
     </el-table-column>
   </el-table>

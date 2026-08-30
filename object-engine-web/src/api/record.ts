@@ -7,7 +7,7 @@ export function createRecord(apiName: string, data: Record<string, unknown>) {
   return http.post<CustomRecord>(`/objects/${apiName}/records`, data)
 }
 
-export function listRecords(apiName: string, params: PageQuery) {
+export function listRecords(apiName: string, params: PageQuery & { keyword?: string }) {
   return http.get<PageResult<CustomRecord>>(`/objects/${apiName}/records`, { params })
 }
 

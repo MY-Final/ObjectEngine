@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { getMetadata } from '@/api/object'
-import { createRecord, deleteRecord, listRecords } from '@/api/record'
+import { createRecord } from '@/api/record'
 import DynamicForm from '@/components/dynamic/DynamicForm.vue'
-import DynamicTable from '@/components/dynamic/DynamicTable.vue'
+import DynamicObjectList from '@/components/dynamic/DynamicObjectList.vue'
 import type { CustomField } from '@/types/field'
 import type { ObjectMetadata } from '@/types/object'
-import type { CustomRecord } from '@/types/record'
 
+/**
+ * ObjectRuntime 页面：只负责路由参数、页头与新建弹窗；
+ * 列表的查询 / 分页 / 删除全部由 DynamicObjectList 组件承担
+ */
 const route = useRoute()
 const router = useRouter()
 
@@ -26,12 +29,6 @@ const activeFields = computed<CustomField[]>(() =>
     .filter((field) => field.status === 1)
     .sort((a, b) => a.sort - b.sort),
 )
-
-const recordsLoading = ref(false)
-const records = ref<CustomRecord[]>([])
-const total = ref(0)
-const page = ref(1)
-const pageSize = ref(20)
 
 async function loadMetadata() {
   metadataLoading.value = true
@@ -51,42 +48,20 @@ async function loadMetadata() {
   }
 }
 
-async function loadRecords() {
-  recordsLoading.value = true
-  try {
-    const result = await listRecords(apiName.value, { page: page.value, pageSize: pageSize.value })
-    records.value = result.records
-    total.value = result.total
-  } finally {
-    recordsLoading.value = false
-  }
-}
-
-function init() {
-  page.value = 1
-  void loadMetadata().then(() => {
-    if (!notFound.value && !loadFailed.value) {
-      void loadRecords()
-    }
-  })
-}
-
-watch(apiName, init, { immediate: true })
-
-function handlePageChange() {
-  void loadRecords()
-}
-
-function handleSizeChange() {
-  page.value = 1
-  void loadRecords()
-}
+watch(
+  apiName,
+  () => {
+    void loadMetadata()
+  },
+  { immediate: true },
+)
 
 // —— 新建记录 ——
 const dialogVisible = ref(false)
 const submitting = ref(false)
 const formModel = ref<Record<string, unknown>>({})
 const dynamicFormRef = ref<InstanceType<typeof DynamicForm>>()
+const listRef = ref<InstanceType<typeof DynamicObjectList>>()
 
 function openCreate() {
   if (!metadata.value) return
@@ -115,32 +90,10 @@ async function handleSubmit() {
     await createRecord(apiName.value, formModel.value)
     ElMessage.success('创建成功')
     dialogVisible.value = false
-    await loadRecords()
+    // 列表组件重置筛选与页码后重新加载，新记录立即可见
+    listRef.value?.refresh()
   } finally {
     submitting.value = false
-  }
-}
-
-// —— 删除记录 ——
-const deletingId = ref<number | null>(null)
-
-async function handleDelete(record: CustomRecord) {
-  try {
-    await ElMessageBox.confirm('确定删除这条数据吗？', '删除确认', {
-      type: 'warning',
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
-    })
-  } catch {
-    return
-  }
-  deletingId.value = record.id
-  try {
-    await deleteRecord(apiName.value, record.id)
-    ElMessage.success('删除成功')
-    await loadRecords()
-  } finally {
-    deletingId.value = null
   }
 }
 </script>
@@ -157,7 +110,7 @@ async function handleDelete(record: CustomRecord) {
 
     <el-result v-else-if="loadFailed" icon="error" title="无法加载对象信息">
       <template #extra>
-        <el-button type="primary" @click="init">重新加载</el-button>
+        <el-button type="primary" @click="loadMetadata">重新加载</el-button>
       </template>
     </el-result>
 
@@ -172,24 +125,7 @@ async function handleDelete(record: CustomRecord) {
         <el-button type="primary" @click="openCreate">新建</el-button>
       </div>
 
-      <DynamicTable
-        :fields="activeFields"
-        :records="records"
-        :loading="recordsLoading"
-        :deleting-id="deletingId"
-        @delete="handleDelete"
-      />
-
-      <el-pagination
-        v-model:current-page="page"
-        v-model:page-size="pageSize"
-        class="page-pagination"
-        layout="total, sizes, prev, pager, next, jumper"
-        :page-sizes="[10, 20, 50]"
-        :total="total"
-        @size-change="handleSizeChange"
-        @current-change="handlePageChange"
-      />
+      <DynamicObjectList ref="listRef" :object-api-name="apiName" />
 
       <el-dialog v-model="dialogVisible" :title="`新建${metadata.object.objectName}`" width="560px">
         <DynamicForm ref="dynamicFormRef" v-model="formModel" :fields="activeFields" />
@@ -211,10 +147,5 @@ async function handleDelete(record: CustomRecord) {
   margin-top: 4px;
   font-size: 13px;
   color: #909399;
-}
-
-.page-pagination {
-  display: flex;
-  margin-top: 16px;
 }
 </style>

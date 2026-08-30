@@ -20,9 +20,9 @@ public interface CustomRecordService extends IService<CustomRecord> {
     RecordVO create(String objectApiName, Map<String, Object> body);
 
     /**
-     * 分页查询记录，V1 只支持 page/pageSize
+     * 分页查询记录；keyword 非空时按对象「可搜索」的文本类字段模糊匹配
      */
-    PageResult<RecordVO> page(String objectApiName, Integer page, Integer pageSize);
+    PageResult<RecordVO> page(String objectApiName, Integer page, Integer pageSize, String keyword);
 
     RecordVO get(String objectApiName, Long id);
 

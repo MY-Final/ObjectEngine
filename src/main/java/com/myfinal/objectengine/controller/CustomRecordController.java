@@ -35,8 +35,9 @@ public class CustomRecordController {
     @GetMapping
     public ApiResponse<PageResult<RecordVO>> page(@PathVariable String apiName,
                                                   @RequestParam(defaultValue = "1") Integer page,
-                                                  @RequestParam(defaultValue = "20") Integer pageSize) {
-        return ApiResponse.ok(customRecordService.page(apiName, page, pageSize));
+                                                  @RequestParam(defaultValue = "20") Integer pageSize,
+                                                  @RequestParam(required = false) String keyword) {
+        return ApiResponse.ok(customRecordService.page(apiName, page, pageSize, keyword));
     }
 
     @GetMapping("/{id}")
