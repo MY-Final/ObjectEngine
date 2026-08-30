@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Refresh } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { createField, updateField } from '@/api/field'
 import { listEnabledOptions, listOptionSets } from '@/api/optionSet'
@@ -26,6 +27,16 @@ const visible = defineModel<boolean>({ required: true })
 const emit = defineEmits<{ saved: [] }>()
 
 const isEdit = computed(() => !!props.field)
+
+/** 随机生成字段 API 名称：field_ + 8 位小写字母数字，符合 API_NAME_PATTERN */
+function generateApiName(): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
+  let suffix = ''
+  for (let i = 0; i < 8; i++) {
+    suffix += chars[Math.floor(Math.random() * chars.length)]
+  }
+  return `field_${suffix}`
+}
 const isOptionType = computed(() => form.fieldType === 'SELECT' || form.fieldType === 'MULTI_SELECT')
 const isTextLike = computed(() => form.fieldType === 'TEXT' || form.fieldType === 'TEXTAREA')
 const isNumeric = computed(() => ['NUMBER', 'MONEY', 'PERCENT'].includes(form.fieldType))
@@ -165,7 +176,8 @@ watch(visible, (open) => {
       void loadPreview(optionSetId.value)
     }
   } else {
-    form.apiName = ''
+    // 新建默认预填随机生成的 API 名称，想规范命名的直接改写
+    form.apiName = generateApiName()
     form.fieldName = ''
     form.fieldType = 'TEXT'
     form.description = ''
@@ -285,11 +297,11 @@ async function handleSubmit() {
   <el-dialog v-model="visible" :title="isEdit ? '编辑字段' : '新建字段'" width="560px">
     <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
       <el-form-item label="API名称" prop="apiName">
-        <el-input
-          v-if="!isEdit"
-          v-model="form.apiName"
-          placeholder="例如 name，创建后不可修改"
-        />
+        <el-input v-if="!isEdit" v-model="form.apiName" placeholder="可自行填写或随机生成，创建后不可修改">
+          <template #append>
+            <el-button :icon="Refresh" title="随机生成" @click="form.apiName = generateApiName()" />
+          </template>
+        </el-input>
         <el-input v-else :model-value="form.apiName" disabled />
       </el-form-item>
       <el-form-item label="字段名称" prop="fieldName">
