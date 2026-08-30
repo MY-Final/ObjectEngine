@@ -24,7 +24,9 @@ const visible = defineModel<boolean>({ required: true })
 const emit = defineEmits<{ saved: [] }>()
 
 const isEdit = computed(() => !!props.field)
-const isSelect = computed(() => form.fieldType === 'SELECT')
+const isOptionType = computed(() => form.fieldType === 'SELECT' || form.fieldType === 'MULTI_SELECT')
+const isTextLike = computed(() => form.fieldType === 'TEXT' || form.fieldType === 'TEXTAREA')
+const isNumeric = computed(() => ['NUMBER', 'MONEY', 'PERCENT'].includes(form.fieldType))
 
 const formRef = ref<FormInstance>()
 const submitting = ref(false)
@@ -45,6 +47,21 @@ const form = reactive({
   status: 1,
 })
 const options = ref<FieldOption[]>([])
+
+/** 类型相关配置：文本长度 / 数字位数，提交时按类型写入 configJson */
+const typeConfig = reactive<{
+  maxLength?: number
+  minLength?: number
+  integerLength?: number
+  scale?: number
+}>({})
+
+function loadTypeConfig(config: FieldConfig | null | undefined) {
+  typeConfig.maxLength = typeof config?.maxLength === 'number' ? config.maxLength : undefined
+  typeConfig.minLength = typeof config?.minLength === 'number' ? config.minLength : undefined
+  typeConfig.integerLength = typeof config?.integerLength === 'number' ? config.integerLength : undefined
+  typeConfig.scale = typeof config?.scale === 'number' ? config.scale : undefined
+}
 
 // NUMBER / MONEY 的默认值用数字输入框编辑，后端 defaultValue 为字符串，这里做桥接
 const numberDefaultValue = computed<number | undefined>({
@@ -93,6 +110,7 @@ watch(visible, (open) => {
     form.defaultValue = target.defaultValue ?? null
     form.status = target.status
     options.value = (target.configJson?.options ?? []).map((option) => ({ ...option }))
+    loadTypeConfig(target.configJson)
   } else {
     form.apiName = ''
     form.fieldName = ''
@@ -107,6 +125,7 @@ watch(visible, (open) => {
     form.defaultValue = null
     form.status = 1
     options.value = []
+    loadTypeConfig(null)
   }
   formRef.value?.clearValidate()
 })
@@ -115,18 +134,27 @@ async function handleSubmit() {
   const valid = await formRef.value?.validate().then(() => true).catch(() => false)
   if (!valid) return
 
-  // SELECT 必须配置 options；非 SELECT 一律存 null
+  // 选择类必须配置 options；文本与数字类把长度 / 位数配置写入 configJson，其余一律存 null
   let configJson: FieldConfig | null = null
-  if (isSelect.value) {
+  if (isOptionType.value) {
     const trimmed = options.value.map((option) => ({
       label: option.label.trim(),
       value: option.value.trim(),
     }))
     if (trimmed.length === 0 || trimmed.some((option) => !option.label || !option.value)) {
-      optionsError.value = 'SELECT 字段必须至少配置一个选项，且选项名称 / 选项值均不能为空'
+      optionsError.value = '选择类字段必须至少配置一个选项，且选项名称 / 选项值均不能为空'
       return
     }
     configJson = { options: trimmed }
+  } else if (isTextLike.value || isNumeric.value) {
+    configJson = {}
+    if (typeConfig.maxLength != null) configJson.maxLength = typeConfig.maxLength
+    if (typeConfig.minLength != null) configJson.minLength = typeConfig.minLength
+    if (typeConfig.integerLength != null) configJson.integerLength = typeConfig.integerLength
+    if (typeConfig.scale != null) configJson.scale = typeConfig.scale
+    if (Object.keys(configJson).length === 0) {
+      configJson = null
+    }
   }
   optionsError.value = ''
 
@@ -203,6 +231,49 @@ async function handleSubmit() {
         </el-select>
         <div v-if="isEdit" class="form-hint">字段类型创建后不可修改</div>
       </el-form-item>
+      <template v-if="isTextLike">
+        <el-form-item label="最大长度">
+          <el-input-number
+            v-model="typeConfig.maxLength"
+            :min="1"
+            :max="5000"
+            controls-position="right"
+            placeholder="不填则不限制"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="最小长度">
+          <el-input-number
+            v-model="typeConfig.minLength"
+            :min="0"
+            controls-position="right"
+            placeholder="不填则不限制"
+            style="width: 100%"
+          />
+        </el-form-item>
+      </template>
+      <template v-else-if="isNumeric">
+        <el-form-item label="整数长度">
+          <el-input-number
+            v-model="typeConfig.integerLength"
+            :min="1"
+            :max="15"
+            controls-position="right"
+            placeholder="不填则不限制"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="小数位数">
+          <el-input-number
+            v-model="typeConfig.scale"
+            :min="0"
+            :max="6"
+            controls-position="right"
+            :placeholder="form.fieldType === 'MONEY' ? '默认 2 位' : '不填则不限制'"
+            style="width: 100%"
+          />
+        </el-form-item>
+      </template>
       <el-form-item label="描述">
         <el-input v-model="form.description" type="textarea" :rows="2" />
       </el-form-item>
@@ -223,7 +294,7 @@ async function handleSubmit() {
       </el-form-item>
       <el-form-item label="默认值">
         <el-input
-          v-if="form.fieldType === 'TEXT' || form.fieldType === 'TEXTAREA' || isSelect"
+          v-if="form.fieldType === 'TEXT' || form.fieldType === 'TEXTAREA' || isOptionType"
           v-model="form.defaultValue"
           placeholder="默认值（可选）"
         />
@@ -245,7 +316,7 @@ async function handleSubmit() {
       <el-form-item label="排序">
         <el-input-number v-model="form.sort" :min="0" />
       </el-form-item>
-      <el-form-item v-if="isSelect" label="选项配置">
+      <el-form-item v-if="isOptionType" label="选项配置">
         <div class="options-editor">
           <SelectOptionEditor v-model="options" />
           <div v-if="optionsError" class="options-error">{{ optionsError }}</div>

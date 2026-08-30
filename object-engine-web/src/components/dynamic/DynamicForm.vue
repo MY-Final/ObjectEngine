@@ -25,15 +25,30 @@ const formRef = ref<FormInstance>()
 const rules = computed<FormRules>(() => {
   const result: FormRules = {}
   for (const field of props.fields) {
-    if (field.requiredFlag !== 1) continue
-    const isChoice = field.fieldType === 'SELECT' || field.fieldType === 'DATE'
-    result[field.apiName] = [
-      {
+    const rulesForField: FormRules[string] = []
+    if (field.requiredFlag === 1) {
+      // 选择类控件变更即触发校验，提示语用「请选择」
+      const isChoice = ['SELECT', 'MULTI_SELECT', 'DATE', 'TIME', 'BOOLEAN'].includes(field.fieldType)
+      rulesForField.push({
         required: true,
         message: isChoice ? `请选择${field.fieldName}` : `请输入${field.fieldName}`,
         trigger: isChoice ? 'change' : 'blur',
-      },
-    ]
+      })
+    }
+    if (field.fieldType === 'TEXT' || field.fieldType === 'TEXTAREA') {
+      const { maxLength, minLength } = field.configJson ?? {}
+      if (typeof maxLength === 'number' || typeof minLength === 'number') {
+        rulesForField.push({
+          min: typeof minLength === 'number' ? minLength : undefined,
+          max: typeof maxLength === 'number' ? maxLength : undefined,
+          message: `${field.fieldName}长度需在 ${minLength ?? 0} ~ ${maxLength ?? '不限'} 字之间`,
+          trigger: 'blur',
+        })
+      }
+    }
+    if (rulesForField.length > 0) {
+      result[field.apiName] = rulesForField
+    }
   }
   return result
 })

@@ -45,6 +45,13 @@ public final class RecordValidator {
     }
 
     private static boolean isBlank(Object value) {
-        return value == null || (value instanceof String s && s.isEmpty());
+        if (value == null) {
+            return true;
+        }
+        if (value instanceof String s) {
+            return s.isEmpty();
+        }
+        // MULTI_SELECT 等多值类型：空数组视为未填写
+        return value instanceof List<?> list && list.isEmpty();
     }
 }

@@ -1,4 +1,4 @@
-import { ElDatePicker, ElInput, ElInputNumber, ElSelect } from 'element-plus'
+import { ElDatePicker, ElInput, ElInputNumber, ElSelect, ElSwitch, ElTimePicker } from 'element-plus'
 import type { Component } from 'vue'
 import type { FieldType } from '@/types/field'
 
@@ -12,8 +12,15 @@ export const FIELD_TYPE_OPTIONS: Array<{ label: string; value: FieldType }> = [
   { label: '多行文本', value: 'TEXTAREA' },
   { label: '数字', value: 'NUMBER' },
   { label: '金额', value: 'MONEY' },
+  { label: '百分比', value: 'PERCENT' },
   { label: '日期', value: 'DATE' },
+  { label: '时间', value: 'TIME' },
   { label: '下拉选择', value: 'SELECT' },
+  { label: '多选', value: 'MULTI_SELECT' },
+  { label: '布尔', value: 'BOOLEAN' },
+  { label: '电话', value: 'PHONE' },
+  { label: '邮箱', value: 'EMAIL' },
+  { label: '网址', value: 'URL' },
 ]
 
 export const FIELD_TYPE_LABEL_MAP: Record<FieldType, string> = {
@@ -21,8 +28,15 @@ export const FIELD_TYPE_LABEL_MAP: Record<FieldType, string> = {
   TEXTAREA: '多行文本',
   NUMBER: '数字',
   MONEY: '金额',
+  PERCENT: '百分比',
   DATE: '日期',
+  TIME: '时间',
   SELECT: '下拉选择',
+  MULTI_SELECT: '多选',
+  BOOLEAN: '布尔',
+  PHONE: '电话',
+  EMAIL: '邮箱',
+  URL: '网址',
 }
 
 /**
@@ -32,8 +46,15 @@ export const FIELD_TYPE_LABEL_MAP: Record<FieldType, string> = {
 export const FIELD_COMPONENT_MAP: Record<FieldType, Component> = {
   TEXT: ElInput,
   TEXTAREA: ElInput,
+  PHONE: ElInput,
+  EMAIL: ElInput,
+  URL: ElInput,
   NUMBER: ElInputNumber,
   MONEY: ElInputNumber,
+  PERCENT: ElInputNumber,
   DATE: ElDatePicker,
+  TIME: ElTimePicker,
   SELECT: ElSelect,
+  MULTI_SELECT: ElSelect,
+  BOOLEAN: ElSwitch,
 }

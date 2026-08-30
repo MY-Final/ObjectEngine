@@ -1,7 +1,7 @@
 package com.myfinal.objectengine.enums;
 
 /**
- * V1 支持的字段类型，禁止自行扩展
+ * 支持的字段类型；新增类型需同步扩展 FieldTypeRegistry 校验器与前端渲染映射
  */
 public enum FieldType {
 
@@ -10,7 +10,14 @@ public enum FieldType {
     NUMBER,
     MONEY,
     DATE,
-    SELECT;
+    SELECT,
+    MULTI_SELECT,
+    BOOLEAN,
+    TIME,
+    PHONE,
+    EMAIL,
+    URL,
+    PERCENT;
 
     /**
      * 解析字段类型字符串，不合法返回 null

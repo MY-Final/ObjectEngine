@@ -70,9 +70,19 @@ function openCreate() {
   for (const field of activeFields.value) {
     const defaultValue = field.defaultValue
     if (defaultValue == null || defaultValue === '') {
-      model[field.apiName] = null
-    } else if (field.fieldType === 'NUMBER' || field.fieldType === 'MONEY') {
+      // 空默认值：多选给空数组、布尔给 false，其余置 null
+      model[field.apiName] =
+        field.fieldType === 'MULTI_SELECT'
+          ? []
+          : field.fieldType === 'BOOLEAN'
+            ? false
+            : null
+    } else if (field.fieldType === 'NUMBER' || field.fieldType === 'MONEY' || field.fieldType === 'PERCENT') {
       model[field.apiName] = Number(defaultValue)
+    } else if (field.fieldType === 'BOOLEAN') {
+      model[field.apiName] = defaultValue === 'true'
+    } else if (field.fieldType === 'MULTI_SELECT') {
+      model[field.apiName] = defaultValue.split(',').map((item) => item.trim())
     } else {
       model[field.apiName] = defaultValue
     }

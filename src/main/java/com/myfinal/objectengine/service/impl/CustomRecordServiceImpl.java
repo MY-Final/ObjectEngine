@@ -26,8 +26,9 @@ import java.util.Set;
 public class CustomRecordServiceImpl extends ServiceImpl<CustomRecordMapper, CustomRecord>
     implements CustomRecordService {
 
-    /** 关键字匹配的候选字段类型：文本类字段（SELECT 按 value 匹配） */
-    private static final Set<String> TEXT_SEARCH_TYPES = Set.of("TEXT", "TEXTAREA", "SELECT");
+    /** 关键字匹配的候选字段类型：文本类字段（SELECT 单选按 value 匹配，多选不参与） */
+    private static final Set<String> TEXT_SEARCH_TYPES =
+        Set.of("TEXT", "TEXTAREA", "SELECT", "PHONE", "EMAIL", "URL");
 
     private final CustomObjectService customObjectService;
     private final CustomFieldService customFieldService;
@@ -42,6 +43,7 @@ public class CustomRecordServiceImpl extends ServiceImpl<CustomRecordMapper, Cus
         CustomObject object = customObjectService.requireByApiName(objectApiName);
         List<CustomField> fields = customFieldService.listByObjectId(object.getId());
         RecordValidator.validate(fields, body);
+        checkUniqueValues(object, fields, body);
 
         CustomRecord record = new CustomRecord();
         record.setObjectId(object.getId());
@@ -50,6 +52,30 @@ public class CustomRecordServiceImpl extends ServiceImpl<CustomRecordMapper, Cus
         record.setUpdatedAt(new Date());
         save(record);
         return RecordVO.from(record);
+    }
+
+    /**
+     * 应用层唯一性校验（uniqueFlag）：同对象同字段出现相同值即拒绝。
+     * 值存在 data_json 中，无法建数据库唯一索引，极端并发下存在竞态窗口；
+     * 后续若新增记录编辑接口，同样必须调用本方法
+     */
+    private void checkUniqueValues(CustomObject object, List<CustomField> fields, Map<String, Object> body) {
+        for (CustomField field : fields) {
+            if (!Integer.valueOf(1).equals(field.getUniqueFlag())) {
+                continue;
+            }
+            Object value = body.get(field.getApiName());
+            if (value == null || (value instanceof String s && s.isEmpty())) {
+                continue;
+            }
+            long duplicates = count(new LambdaQueryWrapper<CustomRecord>()
+                .eq(CustomRecord::getObjectId, object.getId())
+                .apply("JSON_UNQUOTE(JSON_EXTRACT(data_json, CONCAT('$.', {0}))) = {1}",
+                    field.getApiName(), String.valueOf(value)));
+            if (duplicates > 0) {
+                throw BusinessException.badRequest("字段【" + field.getFieldName() + "】已存在相同值：" + value);
+            }
+        }
     }
 
     @Override
