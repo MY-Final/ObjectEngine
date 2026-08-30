@@ -65,6 +65,12 @@ const router = createRouter({
           component: () => import('@/views/option-set/index.vue'),
           meta: { title: '通用选项集' },
         },
+        {
+          path: 'admin/users',
+          name: 'user-list',
+          component: () => import('@/views/system/user.vue'),
+          meta: { title: '用户管理' },
+        },
         // 旧地址兼容重定向（书签 / 未更新的菜单数据），redirect 字符串会自动带上路由参数
         { path: 'objects', redirect: '/admin/objects' },
         { path: 'objects/:apiName', redirect: '/admin/objects/:apiName' },

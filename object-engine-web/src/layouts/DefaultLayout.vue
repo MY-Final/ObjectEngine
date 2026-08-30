@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Expand, Fold, HomeFilled, Search, Setting, SwitchButton, UserFilled } from '@element-plus/icons-vue'
 import { logout } from '@/api/auth'
-import { clearToken } from '@/constants/auth'
+import { clearLoginState } from '@/constants/auth'
 import type { MenuTreeItem } from '@/types/menu'
 import { useAppStore } from '@/stores/app'
 import { resolveIcon } from '@/utils/icon'
@@ -69,7 +69,7 @@ async function handleUserCommand(command: string) {
   } catch {
     // 接口失败也照常清理本地登录态
   }
-  clearToken()
+  clearLoginState()
   ElMessage.success('已退出登录')
   await router.push('/login')
 }

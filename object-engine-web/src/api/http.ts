@@ -1,7 +1,7 @@
 import axios, { type AxiosRequestConfig } from 'axios'
 import { ElMessage } from 'element-plus'
 import type { ApiResponse } from '@/types/api'
-import { clearToken, getToken } from '@/constants/auth'
+import { clearLoginState, getToken } from '@/constants/auth'
 
 /** 扩展配置：silent=true 时错误不弹 ElMessage，由调用方自行处理 */
 export interface RequestConfig extends AxiosRequestConfig {
@@ -44,7 +44,7 @@ instance.interceptors.response.use(
   (error) => {
     // 登录过期：清 token 并跳登录页（当前已在登录页时仅提示，避免循环跳转）
     if (error.response?.status === 401) {
-      clearToken()
+      clearLoginState()
       if (window.location.pathname !== '/login') {
         window.location.href = '/login'
       }

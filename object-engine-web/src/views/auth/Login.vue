@@ -3,7 +3,7 @@ import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { login } from '@/api/auth'
-import { setToken } from '@/constants/auth'
+import { setLoginUser, setToken } from '@/constants/auth'
 import type { FormInstance, FormRules } from 'element-plus'
 
 const route = useRoute()
@@ -28,6 +28,7 @@ async function handleSubmit() {
   try {
     const result = await login({ username: form.username, password: form.password })
     setToken(result.token)
+    setLoginUser(result.user)
     ElMessage.success(`欢迎回来，${result.user.name}`)
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
     await router.push(redirect)
