@@ -1,0 +1,197 @@
+/**
+ * Element Plus 组件层微调。
+ *
+ * 只做「变量覆盖不了」的部分：表格线的取舍、卡片阴影层级、弹窗头尾分隔线。
+ * 能用 --el-* 变量解决的都在 tokens.css 里，这里不再重复。
+ */
+
+/* —— 表格：去全网格线，改行悬停 + 浅表头 ——
+ * EP 默认 border 表格是全网格（每格四边），观感最重；
+ * 这里统一改为：表头浅底 + 仅底部横线 + 行悬停淡蓝，竖线一律去掉。 */
+.el-table {
+  --el-table-border-color: var(--oe-border-soft);
+  font-size: var(--el-font-size-base);
+}
+
+/* 表头：压浅底、字重提高、字号略小，形成层次 */
+.el-table th.el-table__cell {
+  background-color: var(--oe-surface-2) !important;
+  color: var(--oe-text-3);
+  font-weight: 600;
+  font-size: var(--el-font-size-small);
+  letter-spacing: 0.02em;
+  border-bottom: 1px solid var(--oe-border);
+}
+
+/* 行高：默认 12px 偏挤，14px 更适合长时间看数据 */
+.el-table td.el-table__cell {
+  padding: 12px 0;
+}
+
+/* 未使用 border 属性时首尾行不画底线，避免和卡片边框叠出双线 */
+.el-table:not(.border) .el-table__inner-wrapper::after {
+  display: none;
+}
+
+.el-table--border .el-table__cell {
+  border-right: none;
+}
+
+.el-table--border .el-table__cell:last-child {
+  border-right: none;
+}
+
+.el-table__empty-block {
+  min-height: 180px;
+}
+
+.el-table__empty-text {
+  color: var(--oe-text-3);
+  font-size: var(--el-font-size-base);
+}
+
+/* 固定列的分割阴影压淡，默认的灰色渐变太重 */
+.el-table__body-wrapper .el-table__fixed-right::before,
+.el-table__body-wrapper .el-table__fixed-left::before {
+  opacity: 0.6;
+}
+
+/* —— 卡片：发丝边框 + 极淡投影，圆角 12px ——
+ * 页面里到处是卡片，靠阴影分层比靠深边框更干净。 */
+.el-card {
+  box-shadow: var(--oe-shadow-1);
+}
+
+.el-card__header {
+  font-weight: 600;
+  color: var(--oe-text-1);
+}
+
+/* —— 弹窗：头尾加分隔线，视觉上把「标题 / 内容 / 操作」三层分开 —— */
+.el-dialog {
+  border-radius: var(--oe-radius-lg);
+  box-shadow: var(--oe-shadow-3);
+  overflow: hidden;
+}
+
+.el-dialog__header {
+  padding-bottom: var(--oe-space-4);
+  margin-right: 0;
+  border-bottom: 1px solid var(--oe-border-soft);
+}
+
+.el-dialog__title {
+  font-size: var(--el-font-size-large);
+  font-weight: 600;
+  color: var(--oe-text-1);
+}
+
+.el-dialog__body {
+  padding: var(--oe-space-5) var(--oe-space-6);
+}
+
+.el-dialog__footer {
+  padding-top: var(--oe-space-4);
+  border-top: 1px solid var(--oe-border-soft);
+}
+
+/* —— MessageBox 同步弹窗的圆角与投影 —— */
+.el-message-box {
+  border-radius: var(--oe-radius-lg);
+  box-shadow: var(--oe-shadow-3);
+  padding: var(--oe-space-5) var(--oe-space-6);
+}
+
+.el-message-box__title {
+  font-size: var(--el-font-size-large);
+  font-weight: 600;
+}
+
+/* —— 按钮：中文界面下 500 字重比默认 400 更利落 —— */
+.el-button {
+  font-weight: 500;
+}
+
+.el-button--primary:not(.is-text):not(.is-link) {
+  box-shadow: var(--oe-shadow-brand);
+}
+
+/* —— 标签：圆角收小一点，和输入框的 8px 协调 —— */
+.el-tag {
+  border-radius: var(--oe-radius-sm);
+  font-weight: 500;
+}
+
+/* —— 描述列表（详情页）：标签底压浅一档，比 700 字重柔和 —— */
+.el-descriptions__label.is-bordered-label {
+  background-color: var(--oe-surface-2) !important;
+  color: var(--oe-text-2);
+  font-weight: 600;
+}
+
+.el-descriptions__body {
+  background-color: var(--oe-surface) !important;
+}
+
+/* —— 表单：标签不用 700，避免和输入框内容抢视线 —— */
+.el-form-item__label {
+  color: var(--oe-text-2);
+  font-weight: 500;
+}
+
+/* —— 分页：背景透明，跟页面而不是卡片对齐 —— */
+.el-pagination {
+  --el-pagination-bg-color: transparent;
+  --el-pagination-button-bg-color: transparent;
+  font-weight: 400;
+}
+
+.el-pagination .el-pager li,
+.el-pagination .el-pager li:hover {
+  border-radius: var(--oe-radius-sm);
+  font-weight: 500;
+}
+
+/* —— 空态 / 结果页：默认图标偏大偏灰，压一下 —— */
+.el-empty__description p {
+  color: var(--oe-text-3);
+}
+
+.el-result__subtitle p {
+  color: var(--oe-text-3);
+}
+
+/* —— 步骤条：图标底色用品牌浅色，和统计卡呼应 —— */
+.el-step__head.is-process {
+  color: var(--oe-brand-500);
+  border-color: var(--oe-brand-500);
+}
+
+.el-step__head.is-finish {
+  color: var(--oe-brand-500);
+  border-color: var(--oe-brand-500);
+}
+
+.el-step__head.is-finish .el-step__icon {
+  background-color: var(--oe-brand-500);
+}
+
+/* —— 标签页：激活色走主色，指示线加粗一点 —— */
+.el-tabs__item.is-active {
+  font-weight: 600;
+}
+
+.el-tabs__active-bar {
+  height: 3px;
+  border-radius: 999px;
+}
+
+/* —— 提示气泡：投影与圆角跟 token 对齐 —— */
+.el-popper.is-light {
+  border: 1px solid var(--oe-border);
+  box-shadow: var(--oe-shadow-2);
+}
+
+.el-popper.is-light .el-popper__arrow::before {
+  border-color: var(--oe-border) !important;
+}

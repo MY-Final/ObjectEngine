@@ -103,7 +103,7 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <el-dialog v-model="visible" :title="isEdit ? '编辑对象' : '新建对象'" width="520px">
+  <el-dialog v-model="visible" :title="isEdit ? '编辑对象' : '新建对象'" width="560px">
     <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
       <el-form-item label="API名称" prop="apiName">
         <el-input
@@ -112,6 +112,7 @@ async function handleSubmit() {
           placeholder="例如 project__c，创建后不可修改"
         />
         <el-input v-else :model-value="form.apiName" disabled />
+        <div v-if="isEdit" class="form-hint">API 名称创建后不可修改</div>
       </el-form-item>
       <el-form-item label="对象名称" prop="objectName">
         <el-input v-model="form.objectName" placeholder="例如：项目" />
@@ -147,10 +148,3 @@ async function handleSubmit() {
     </template>
   </el-dialog>
 </template>
-
-<style scoped>
-.form-hint {
-  font-size: 12px;
-  color: #909399;
-}
-</style>

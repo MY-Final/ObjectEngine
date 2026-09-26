@@ -2,9 +2,12 @@
 import { h, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus } from '@element-plus/icons-vue'
 import { deleteObject, listObjects, updateObject } from '@/api/object'
 import type { CustomObject } from '@/types/object'
 import { useAppStore } from '@/stores/app'
+import PageHeader from '@/components/common/PageHeader.vue'
+import SearchBar from '@/components/common/SearchBar.vue'
 import ObjectFormDialog from './components/ObjectFormDialog.vue'
 
 const router = useRouter()
@@ -108,7 +111,7 @@ async function handleDelete(row: CustomObject) {
         h('p', { style: 'margin: 0 0 8px' }, `确定要删除对象「${row.objectName}」吗？`),
         h(
           'p',
-          { style: 'margin: 0; font-size: 13px; color: #909399' },
+          { class: 'form-hint' },
           '删除对象后，该对象的字段和数据也会被删除，此操作不可恢复。',
         ),
       ]),
@@ -131,87 +134,96 @@ async function handleDelete(row: CustomObject) {
 
 <template>
   <div class="page">
-    <div class="page-toolbar">
-      <h2>对象管理</h2>
-      <el-button type="primary" @click="openCreate">新建对象</el-button>
-    </div>
+    <PageHeader title="对象管理" description="业务对象是引擎的核心单元，一个对象对应一张动态页面与一份元数据。">
+      <template #actions>
+        <el-button type="primary" :icon="Plus" @click="openCreate">新建对象</el-button>
+      </template>
+    </PageHeader>
 
-    <div class="search-bar">
-      <span class="search-label">关键词：</span>
-      <el-input
-        v-model="query.keyword"
-        placeholder="对象名称 / API 名称"
-        clearable
-        style="width: 220px"
-        @keyup.enter="handleSearch"
-        @clear="handleSearch"
-      />
-      <el-button @click="handleSearch">搜索</el-button>
-      <el-button @click="handleReset">重置</el-button>
-    </div>
-
-    <el-table v-loading="loading" :data="records" border empty-text="暂无对象">
-      <el-table-column prop="objectName" label="对象名称" min-width="120" />
-      <el-table-column prop="apiName" label="API名称" min-width="150" />
-      <el-table-column prop="description" label="描述" min-width="160" show-overflow-tooltip />
-      <el-table-column label="状态" width="90" align="center">
-        <template #default="{ row }">
-          <el-switch
-            v-model="row.status"
-            :active-value="1"
-            :inactive-value="0"
-            @change="handleStatusChange(row)"
+    <el-card shadow="never" class="table-card is-flush">
+      <template #header>
+        <SearchBar label="关键词：" :loading="loading" @search="handleSearch" @reset="handleReset">
+          <el-input
+            v-model="query.keyword"
+            placeholder="对象名称 / API 名称"
+            clearable
+            class="w-220"
+            @keyup.enter="handleSearch"
+            @clear="handleSearch"
           />
-        </template>
-      </el-table-column>
-      <el-table-column prop="sort" label="排序" width="70" align="center" />
-      <el-table-column prop="updatedAt" label="更新时间" width="170" />
-      <el-table-column label="操作" width="220" fixed="right">
-        <template #default="{ row }">
-          <el-button link type="primary" @click="goDetail(row.apiName)">查看</el-button>
-          <el-button link type="primary" @click="goFields(row.apiName)">字段</el-button>
-          <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
-          <el-button
-            link
-            type="danger"
-            :loading="deletingApiName === row.apiName"
-            @click="handleDelete(row)"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+        </SearchBar>
+      </template>
 
-    <el-pagination
-      v-model:current-page="query.page"
-      v-model:page-size="query.pageSize"
-      class="page-pagination"
-      layout="total, sizes, prev, pager, next, jumper"
-      :page-sizes="[10, 20, 50]"
-      :total="total"
-      @size-change="handleSizeChange"
-      @current-change="handlePageChange"
-    />
+      <el-table v-loading="loading" :data="records" empty-text="暂无对象">
+        <el-table-column prop="objectName" label="对象名称" min-width="130">
+          <template #default="{ row }">
+            <div class="cell-main">{{ row.objectName }}</div>
+            <div class="text-api">{{ row.apiName }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.description || '-' }}</template>
+        </el-table-column>
+        <el-table-column label="状态" width="90" align="center">
+          <template #default="{ row }">
+            <el-switch
+              v-model="row.status"
+              :active-value="1"
+              :inactive-value="0"
+              @change="handleStatusChange(row)"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column prop="sort" label="排序" width="80" align="center" />
+        <el-table-column prop="updatedAt" label="更新时间" width="170" />
+        <el-table-column label="操作" width="280" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" @click="goDetail(row.apiName)">查看</el-button>
+            <el-button link type="primary" @click="goFields(row.apiName)">字段</el-button>
+            <el-button
+              link
+              type="primary"
+              :disabled="row.status !== 1"
+              @click="router.push(`/custom/${row.apiName}`)"
+            >
+              打开
+            </el-button>
+            <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
+            <el-button
+              link
+              type="danger"
+              :loading="deletingApiName === row.apiName"
+              @click="handleDelete(row)"
+            >
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <template #footer>
+        <el-pagination
+          v-model:current-page="query.page"
+          v-model:page-size="query.pageSize"
+          class="page-pagination"
+          layout="total, sizes, prev, pager, next, jumper"
+          :page-sizes="[10, 20, 50]"
+          :total="total"
+          @size-change="handleSizeChange"
+          @current-change="handlePageChange"
+        />
+      </template>
+    </el-card>
 
     <ObjectFormDialog v-model="dialogVisible" :object="dialogTarget" @saved="handleSaved" />
   </div>
 </template>
 
 <style scoped>
-.search-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.search-label {
-  font-size: 14px;
-  color: #606266;
-}
-
-.page-pagination {
-  display: flex;
+/* 表格首列：主标题 + 等宽 API 名称 */
+.cell-main {
+  font-weight: 500;
+  color: var(--oe-text-1);
 }
 </style>
+

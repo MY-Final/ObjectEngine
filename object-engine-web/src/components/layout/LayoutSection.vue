@@ -78,10 +78,10 @@ function removeField(index: number) {
         <el-input
           :model-value="section.title"
           size="small"
-          style="width: 200px"
+          class="w-160"
+          placeholder="分组标题"
           @update:model-value="emit('update', { ...section, title: String($event) })"
         />
-        <span class="section-hint">标题可直接编辑</span>
         <el-button-group>
           <el-button size="small" :disabled="isFirst" @click="emit('up')">↑</el-button>
           <el-button size="small" :disabled="isLast" @click="emit('down')">↓</el-button>
@@ -116,7 +116,7 @@ function removeField(index: number) {
         size="small"
         filterable
         placeholder="选择未使用字段"
-        style="width: 220px"
+        class="w-220"
       >
         <el-option
           v-for="field in unusedFields"
@@ -136,13 +136,7 @@ function removeField(index: number) {
 .section-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.section-hint {
-  flex: 1;
-  font-size: 12px;
-  color: #c0c4cc;
+  gap: var(--oe-space-2);
 }
 
 .layout-field-row:empty {
@@ -151,20 +145,21 @@ function removeField(index: number) {
 
 .layout-field-invalid {
   justify-content: space-between;
-  color: #909399;
-  background-color: #fdf6ec;
-  border-color: #faecd8;
+  color: var(--oe-text-2);
+  background-color: var(--oe-warning-soft);
+  border-color: var(--el-color-warning-light-7);
 }
 
 .section-empty {
-  font-size: 12px;
-  color: #909399;
-  padding: 8px 0;
+  padding: var(--oe-space-3) 0;
+  font-size: var(--el-font-size-small);
+  color: var(--oe-text-3);
+  text-align: center;
 }
 
 .section-add {
   display: flex;
-  gap: 8px;
-  margin-top: 4px;
+  gap: var(--oe-space-2);
+  margin-top: var(--oe-space-1);
 }
 </style>

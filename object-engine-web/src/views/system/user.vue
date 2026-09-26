@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus } from '@element-plus/icons-vue'
 import {
   createSysUser,
   deleteSysUser,
@@ -11,6 +12,8 @@ import {
 } from '@/api/sysUser'
 import type { SysUserItem } from '@/types/sysUser'
 import { getLoginUser } from '@/constants/auth'
+import PageHeader from '@/components/common/PageHeader.vue'
+import SearchBar from '@/components/common/SearchBar.vue'
 
 const currentUserId = computed(() => getLoginUser()?.id ?? null)
 
@@ -186,83 +189,96 @@ onMounted(() => {
 
 <template>
   <div class="page">
-    <div class="page-toolbar">
-      <h2>用户管理</h2>
-      <el-button type="primary" @click="openCreate">新建用户</el-button>
-    </div>
+    <PageHeader title="用户管理" description="可登录后台的账号，密码由管理员在创建时设置，也可在此重置。">
+      <template #actions>
+        <el-button type="primary" :icon="Plus" @click="openCreate">新建用户</el-button>
+      </template>
+    </PageHeader>
 
-    <div class="search-bar">
-      <span class="search-label">搜索：</span>
-      <el-input
-        v-model="query.keyword"
-        placeholder="用户名 / 姓名"
-        clearable
-        style="width: 240px"
-        @keyup.enter="handleSearch"
-        @clear="handleSearch"
-      />
-      <el-select
-        v-model="query.status"
-        placeholder="状态"
-        clearable
-        style="width: 110px"
-        @change="handleSearch"
-      >
-        <el-option label="启用" :value="1" />
-        <el-option label="停用" :value="0" />
-      </el-select>
-      <el-button @click="handleSearch">搜索</el-button>
-      <el-button @click="handleReset">重置</el-button>
-    </div>
-
-    <el-table v-loading="loading" :data="records" border empty-text="暂无用户">
-      <el-table-column prop="name" label="姓名" min-width="120" />
-      <el-table-column prop="username" label="用户名" min-width="140" />
-      <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip>
-        <template #default="{ row }">{{ row.email || '-' }}</template>
-      </el-table-column>
-      <el-table-column prop="phone" label="电话" min-width="140">
-        <template #default="{ row }">{{ row.phone || '-' }}</template>
-      </el-table-column>
-      <el-table-column label="状态" width="90" align="center">
-        <template #default="{ row }">
-          <el-switch
-            v-model="row.status"
-            :active-value="1"
-            :inactive-value="0"
-            :disabled="row.id === currentUserId"
-            @change="handleStatusChange(row)"
+    <el-card shadow="never" class="table-card is-flush">
+      <template #header>
+        <SearchBar label="搜索：" :loading="loading" @search="handleSearch" @reset="handleReset">
+          <el-input
+            v-model="query.keyword"
+            placeholder="用户名 / 姓名"
+            clearable
+            class="w-240"
+            @keyup.enter="handleSearch"
+            @clear="handleSearch"
           />
-        </template>
-      </el-table-column>
-      <el-table-column prop="createdAt" label="创建时间" width="170" />
-      <el-table-column prop="updatedAt" label="修改时间" width="170" />
-      <el-table-column label="操作" width="210" fixed="right">
-        <template #default="{ row }">
-          <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
-          <el-button link type="primary" @click="handleResetPassword(row)">重置密码</el-button>
-          <el-button
-            link
-            type="danger"
-            :disabled="row.id === currentUserId"
-            @click="handleDelete(row)"
+          <el-select
+            v-model="query.status"
+            placeholder="状态"
+            clearable
+            class="w-110"
+            @change="handleSearch"
           >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+            <el-option label="启用" :value="1" />
+            <el-option label="停用" :value="0" />
+          </el-select>
+        </SearchBar>
+      </template>
 
-    <el-pagination
-      v-model:current-page="query.page"
-      v-model:page-size="query.pageSize"
-      class="page-pagination"
-      layout="total, sizes, prev, pager, next, jumper"
-      :page-sizes="[10, 20, 50]"
-      :total="total"
-      @size-change="handleSizeChange"
-      @current-change="handlePageChange"
-    />
+      <el-table v-loading="loading" :data="records" empty-text="暂无用户">
+        <el-table-column prop="name" label="姓名" min-width="120">
+          <template #default="{ row }">
+            <div class="cell-main">
+              {{ row.name }}
+              <el-tag v-if="row.id === currentUserId" size="small" type="primary" class="cell-tag">
+                当前登录
+              </el-tag>
+            </div>
+            <div class="text-api">{{ row.username }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="email" label="邮箱" min-width="200" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.email || '-' }}</template>
+        </el-table-column>
+        <el-table-column prop="phone" label="电话" min-width="140">
+          <template #default="{ row }">{{ row.phone || '-' }}</template>
+        </el-table-column>
+        <el-table-column label="状态" width="90" align="center">
+          <template #default="{ row }">
+            <el-switch
+              v-model="row.status"
+              :active-value="1"
+              :inactive-value="0"
+              :disabled="row.id === currentUserId"
+              @change="handleStatusChange(row)"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column prop="createdAt" label="创建时间" width="170" />
+        <el-table-column prop="updatedAt" label="修改时间" width="170" />
+        <el-table-column label="操作" width="210" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
+            <el-button link type="primary" @click="handleResetPassword(row)">重置密码</el-button>
+            <el-button
+              link
+              type="danger"
+              :disabled="row.id === currentUserId"
+              @click="handleDelete(row)"
+            >
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <template #footer>
+        <el-pagination
+          v-model:current-page="query.page"
+          v-model:page-size="query.pageSize"
+          class="page-pagination"
+          layout="total, sizes, prev, pager, next, jumper"
+          :page-sizes="[10, 20, 50]"
+          :total="total"
+          @size-change="handleSizeChange"
+          @current-change="handlePageChange"
+        />
+      </template>
+    </el-card>
 
     <el-dialog
       v-model="dialogVisible"
@@ -310,26 +326,16 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.search-bar {
+.cell-main {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: var(--oe-space-2);
+  font-weight: 500;
+  color: var(--oe-text-1);
 }
 
-.search-label {
-  font-size: 14px;
-  color: #606266;
-}
-
-.page-pagination {
-  display: flex;
-  margin-top: 16px;
-}
-
-.form-hint {
-  width: 100%;
-  font-size: 12px;
-  color: #909399;
+.cell-tag {
+  transform: scale(0.9);
+  transform-origin: left center;
 }
 </style>

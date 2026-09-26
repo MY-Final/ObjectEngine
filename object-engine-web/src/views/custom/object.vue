@@ -4,8 +4,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getMetadata } from '@/api/object'
 import { createRecord } from '@/api/record'
+import { Plus } from '@element-plus/icons-vue'
 import DynamicForm from '@/components/dynamic/DynamicForm.vue'
 import DynamicObjectList from '@/components/dynamic/DynamicObjectList.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
 import type { CustomField } from '@/types/field'
 import type { ObjectMetadata } from '@/types/object'
 import { buildFormModel } from '@/utils/record'
@@ -105,19 +107,25 @@ async function handleSubmit() {
     </el-result>
 
     <template v-else-if="metadata">
-      <div class="page-toolbar">
-        <div>
-          <h2 style="margin: 0; font-size: 18px">{{ metadata.object.objectName }}</h2>
-          <div v-if="metadata.object.description" class="object-desc">
-            {{ metadata.object.description }}
-          </div>
-        </div>
-        <el-button type="primary" @click="openCreate">新建</el-button>
-      </div>
+      <PageHeader
+        :title="metadata.object.objectName"
+        :description="metadata.object.description || ''"
+      >
+        <template #actions>
+          <el-button
+            :icon="Plus"
+            type="primary"
+            @click="router.push(`/admin/objects/${apiName}/fields`)"
+          >
+            配置字段
+          </el-button>
+          <el-button type="primary" plain :icon="Plus" @click="openCreate">新建记录</el-button>
+        </template>
+      </PageHeader>
 
       <DynamicObjectList ref="listRef" :object-api-name="apiName" />
 
-      <el-dialog v-model="dialogVisible" :title="`新建${metadata.object.objectName}`" width="560px">
+      <el-dialog v-model="dialogVisible" :title="`新建${metadata.object.objectName}`" width="640px">
         <DynamicForm ref="dynamicFormRef" v-model="formModel" :fields="activeFields" />
         <template #footer>
           <el-button @click="dialogVisible = false">取消</el-button>
@@ -127,15 +135,3 @@ async function handleSubmit() {
     </template>
   </div>
 </template>
-
-<style scoped>
-.page-loading {
-  height: 240px;
-}
-
-.object-desc {
-  margin-top: 4px;
-  font-size: 13px;
-  color: #909399;
-}
-</style>

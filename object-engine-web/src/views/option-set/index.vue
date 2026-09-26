@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Rank } from '@element-plus/icons-vue'
+import { Plus, Rank } from '@element-plus/icons-vue'
 import {
   createOption,
   createOptionSet,
@@ -13,6 +13,8 @@ import {
   updateOptionSet,
 } from '@/api/optionSet'
 import type { OptionSet } from '@/types/optionSet'
+import PageHeader from '@/components/common/PageHeader.vue'
+import SearchBar from '@/components/common/SearchBar.vue'
 
 const MAX_OPTIONS = 1000
 
@@ -305,69 +307,82 @@ onMounted(() => {
 
 <template>
   <div class="page">
-    <div class="page-toolbar">
-      <h2>通用选项集</h2>
-      <el-button type="primary" @click="openCreate">新建选项集</el-button>
-    </div>
+    <PageHeader
+      title="通用选项集"
+      description="集中维护下拉选项，字段配置时可直接引用，避免同一组选项在多个对象里重复维护。"
+    >
+      <template #actions>
+        <el-button type="primary" :icon="Plus" @click="openCreate">新建选项集</el-button>
+      </template>
+    </PageHeader>
 
-    <div class="search-bar">
-      <span class="search-label">搜索：</span>
-      <el-input
-        v-model="query.keyword"
-        placeholder="选项集名称 / API 名称"
-        clearable
-        style="width: 240px"
-        @keyup.enter="handleSearch"
-        @clear="handleSearch"
-      />
-      <el-select
-        v-model="query.status"
-        placeholder="状态"
-        clearable
-        style="width: 110px"
-        @change="handleSearch"
-      >
-        <el-option label="启用" :value="1" />
-        <el-option label="停用" :value="0" />
-      </el-select>
-      <el-button @click="handleSearch">搜索</el-button>
-      <el-button @click="handleReset">重置</el-button>
-    </div>
+    <el-card shadow="never" class="table-card is-flush">
+      <template #header>
+        <SearchBar label="搜索：" :loading="loading" @search="handleSearch" @reset="handleReset">
+          <el-input
+            v-model="query.keyword"
+            placeholder="选项集名称 / API 名称"
+            clearable
+            class="w-240"
+            @keyup.enter="handleSearch"
+            @clear="handleSearch"
+          />
+          <el-select
+            v-model="query.status"
+            placeholder="状态"
+            clearable
+            class="w-110"
+            @change="handleSearch"
+          >
+            <el-option label="启用" :value="1" />
+            <el-option label="停用" :value="0" />
+          </el-select>
+        </SearchBar>
+      </template>
 
-    <el-table v-loading="loading" :data="records" border empty-text="暂无选项集">
-      <el-table-column prop="name" label="名称" min-width="140" />
-      <el-table-column prop="apiName" label="API名称" min-width="160" />
-      <el-table-column prop="optionsSummary" label="选项信息" min-width="220" show-overflow-tooltip>
-        <template #default="{ row }">{{ row.optionsSummary || '-' }}</template>
-      </el-table-column>
-      <el-table-column prop="description" label="描述" min-width="140" show-overflow-tooltip />
-      <el-table-column label="状态" width="90" align="center">
-        <template #default="{ row }">
-          <el-tag :type="row.status === 1 ? 'success' : 'info'">
-            {{ row.status === 1 ? '启用' : '停用' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="createdAt" label="创建时间" width="170" />
-      <el-table-column prop="updatedAt" label="修改时间" width="170" />
-      <el-table-column label="操作" width="130" fixed="right">
-        <template #default="{ row }">
-          <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
-          <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+      <el-table v-loading="loading" :data="records" empty-text="暂无选项集">
+        <el-table-column prop="name" label="名称" min-width="150">
+          <template #default="{ row }">
+            <div class="cell-main">{{ row.name }}</div>
+            <div class="text-api">{{ row.apiName }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="optionsSummary" label="选项信息" min-width="240" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.optionsSummary || '-' }}</template>
+        </el-table-column>
+        <el-table-column prop="description" label="描述" min-width="160" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.description || '-' }}</template>
+        </el-table-column>
+        <el-table-column label="状态" width="90" align="center">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 1 ? 'success' : 'info'" size="small">
+              {{ row.status === 1 ? '启用' : '停用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="createdAt" label="创建时间" width="170" />
+        <el-table-column prop="updatedAt" label="修改时间" width="170" />
+        <el-table-column label="操作" width="130" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
+            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
 
-    <el-pagination
-      v-model:current-page="query.page"
-      v-model:page-size="query.pageSize"
-      class="page-pagination"
-      layout="total, sizes, prev, pager, next, jumper"
-      :page-sizes="[10, 20, 50]"
-      :total="total"
-      @size-change="handleSizeChange"
-      @current-change="handlePageChange"
-    />
+      <template #footer>
+        <el-pagination
+          v-model:current-page="query.page"
+          v-model:page-size="query.pageSize"
+          class="page-pagination"
+          layout="total, sizes, prev, pager, next, jumper"
+          :page-sizes="[10, 20, 50]"
+          :total="total"
+          @size-change="handleSizeChange"
+          @current-change="handlePageChange"
+        />
+      </template>
+    </el-card>
 
     <el-dialog
       v-model="dialogVisible"
@@ -448,7 +463,7 @@ onMounted(() => {
                     :rows="6"
                     placeholder="每行一条，格式：名称,值&#10;省略值时与名称相同&#10;例如：&#10;待处理,pending&#10;进行中"
                   />
-                  <div style="text-align: right; margin-top: 8px">
+                  <div class="batch-footer">
                     <el-button size="small" @click="batchVisible = false">取消</el-button>
                     <el-button size="small" type="primary" @click="applyBatch">确定</el-button>
                   </div>
@@ -469,53 +484,47 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.search-bar {
+.cell-main {
+  font-weight: 500;
+  color: var(--oe-text-1);
+}
+
+.batch-footer {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.search-label {
-  font-size: 14px;
-  color: #606266;
-}
-
-.page-pagination {
-  display: flex;
-  margin-top: 16px;
-}
-
-.form-hint {
-  width: 100%;
-  font-size: 12px;
-  color: #909399;
+  justify-content: flex-end;
+  gap: var(--oe-space-2);
+  margin-top: var(--oe-space-2);
 }
 
 .option-editor {
   width: 100%;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 4px;
-  padding: 8px 10px;
+  padding: var(--oe-space-2) var(--oe-space-3);
+  border: 1px solid var(--oe-border-soft);
+  border-radius: var(--oe-radius-md);
+  background-color: var(--oe-surface-2);
 }
 
 .grid-row {
   display: grid;
   grid-template-columns: 24px 1fr 1fr 120px;
-  gap: 8px;
   align-items: center;
+  gap: var(--oe-space-2);
   padding: 5px 0;
 }
 
 .grid-header {
-  font-size: 12px;
-  color: #909399;
+  font-size: var(--el-font-size-extra-small);
+  color: var(--oe-text-3);
 }
 
 .drag-handle {
-  color: #c0c4cc;
-  cursor: grab;
   display: inline-flex;
+  color: var(--oe-text-4);
+  cursor: grab;
+}
+
+.drag-handle:hover {
+  color: var(--oe-text-2);
 }
 
 .drag-handle:active {
@@ -523,30 +532,30 @@ onMounted(() => {
 }
 
 .value-text {
-  color: #606266;
+  color: var(--oe-text-2);
 }
 
 .col-action {
   display: flex;
-  gap: 4px;
   justify-content: flex-start;
+  gap: 4px;
 }
 
 .editor-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 8px;
+  margin-top: var(--oe-space-2);
 }
 
 .footer-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--oe-space-2);
 }
 
 .option-count {
-  font-size: 12px;
-  color: #909399;
+  font-size: var(--el-font-size-extra-small);
+  color: var(--oe-text-3);
 }
 </style>

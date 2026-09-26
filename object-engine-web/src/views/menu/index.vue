@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus } from '@element-plus/icons-vue'
 import { deleteMenu, listMenus, updateMenuStatus, updateMenuVisible } from '@/api/menu'
 import type { MenuItem, MenuParentOption, MenuTree, MenuType } from '@/types/menu'
 import { useAppStore } from '@/stores/app'
 import { resolveIcon } from '@/utils/icon'
+import PageHeader from '@/components/common/PageHeader.vue'
+import SearchBar from '@/components/common/SearchBar.vue'
 import MenuFormDialog from './components/MenuFormDialog.vue'
 
 const appStore = useAppStore()
@@ -165,116 +168,121 @@ onMounted(() => {
 
 <template>
   <div class="page">
-    <div class="page-toolbar">
-      <h2>菜单管理</h2>
-      <el-button type="primary" @click="openCreate">新建菜单</el-button>
-    </div>
-
-    <div class="search-bar">
-      <span class="search-label">菜单名称：</span>
-      <el-input
-        v-model="query.menuName"
-        placeholder="菜单名称"
-        clearable
-        style="width: 200px"
-        @keyup.enter="handleSearch"
-        @clear="handleSearch"
-      />
-      <el-select
-        v-model="query.menuType"
-        placeholder="类型"
-        clearable
-        style="width: 130px"
-        @change="handleSearch"
-      >
-        <el-option label="目录" value="DIRECTORY" />
-        <el-option label="对象" value="OBJECT" />
-        <el-option label="链接" value="LINK" />
-      </el-select>
-      <el-select
-        v-model="query.status"
-        placeholder="状态"
-        clearable
-        style="width: 110px"
-        @change="handleSearch"
-      >
-        <el-option label="启用" :value="1" />
-        <el-option label="停用" :value="0" />
-      </el-select>
-      <el-button @click="handleSearch">搜索</el-button>
-      <el-button @click="handleReset">重置</el-button>
-    </div>
-
-    <el-table
-      v-loading="loading"
-      :data="treeData"
-      row-key="id"
-      :tree-props="{ children: 'children' }"
-      :expand-row-keys="expandedKeys"
-      border
-      empty-text="暂无菜单"
+    <PageHeader
+      title="菜单管理"
+      description="维护前台与后台的导航结构。目录用于分组，对象菜单指向动态页面，链接菜单支持外链。"
     >
-      <el-table-column label="菜单名称" min-width="220">
-        <template #default="{ row }">
-          <el-icon v-if="resolveIcon(row.icon)" class="menu-icon">
-            <component :is="resolveIcon(row.icon)" />
-          </el-icon>
-          {{ row.menuName }}
-        </template>
-      </el-table-column>
-      <el-table-column label="类型" width="90" align="center">
-        <template #default="{ row }">
-          <el-tag :type="MENU_TYPE_TAG_TYPES[row.menuType as MenuType]" size="small">
-            {{ MENU_TYPE_LABELS[row.menuType as MenuType] }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="路由 / 对象" min-width="220">
-        <template #default="{ row }">
-          <span v-if="row.menuType === 'OBJECT'">
-            {{ row.objectApiName }}（{{ row.routePath }}）
-          </span>
-          <span v-else>{{ row.routePath || '-' }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="sort" label="排序" width="70" align="center" />
-      <el-table-column label="状态" width="90" align="center">
-        <template #default="{ row }">
-          <!-- 对象菜单的有效状态由关联对象控制，锁定展示 -->
-          <el-tooltip
-            v-if="row.menuType === 'OBJECT'"
-            content="状态由关联对象控制，请在对象管理中启用/停用"
-            placement="top"
+      <template #actions>
+        <el-button type="primary" :icon="Plus" @click="openCreate">新建菜单</el-button>
+      </template>
+    </PageHeader>
+
+    <el-card shadow="never" class="table-card is-flush">
+      <template #header>
+        <SearchBar :loading="loading" @search="handleSearch" @reset="handleReset">
+          <el-input
+            v-model="query.menuName"
+            placeholder="菜单名称"
+            clearable
+            class="w-200"
+            @keyup.enter="handleSearch"
+            @clear="handleSearch"
+          />
+          <el-select
+            v-model="query.menuType"
+            placeholder="类型"
+            clearable
+            class="w-130"
+            @change="handleSearch"
           >
-            <el-switch :model-value="effectiveStatus(row)" disabled />
-          </el-tooltip>
-          <el-switch
-            v-else
-            v-model="row.status"
-            :active-value="1"
-            :inactive-value="0"
-            @change="handleStatusChange(row)"
-          />
-        </template>
-      </el-table-column>
-      <el-table-column label="显示" width="90" align="center">
-        <template #default="{ row }">
-          <el-switch
-            v-model="row.visible"
-            :active-value="1"
-            :inactive-value="0"
-            @change="handleVisibleChange(row)"
-          />
-        </template>
-      </el-table-column>
-      <el-table-column prop="updatedAt" label="更新时间" width="170" />
-      <el-table-column label="操作" width="130" fixed="right">
-        <template #default="{ row }">
-          <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
-          <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+            <el-option label="目录" value="DIRECTORY" />
+            <el-option label="对象" value="OBJECT" />
+            <el-option label="链接" value="LINK" />
+          </el-select>
+          <el-select
+            v-model="query.status"
+            placeholder="状态"
+            clearable
+            class="w-110"
+            @change="handleSearch"
+          >
+            <el-option label="启用" :value="1" />
+            <el-option label="停用" :value="0" />
+          </el-select>
+        </SearchBar>
+      </template>
+
+      <el-table
+        v-loading="loading"
+        :data="treeData"
+        row-key="id"
+        :tree-props="{ children: 'children' }"
+        :expand-row-keys="expandedKeys"
+        empty-text="暂无菜单"
+      >
+        <el-table-column label="菜单名称" min-width="220">
+          <template #default="{ row }">
+            <el-icon v-if="resolveIcon(row.icon)" class="menu-icon">
+              <component :is="resolveIcon(row.icon)" />
+            </el-icon>
+            <span class="cell-main">{{ row.menuName }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="类型" width="90" align="center">
+          <template #default="{ row }">
+            <el-tag :type="MENU_TYPE_TAG_TYPES[row.menuType as MenuType]" size="small">
+              {{ MENU_TYPE_LABELS[row.menuType as MenuType] }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="路由 / 对象" min-width="220">
+          <template #default="{ row }">
+            <div v-if="row.menuType === 'OBJECT'" class="cell-route">
+              <span class="text-api">{{ row.objectApiName }}</span>
+              <span class="text-muted">{{ row.routePath }}</span>
+            </div>
+            <span v-else class="text-api">{{ row.routePath || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="sort" label="排序" width="80" align="center" />
+        <el-table-column label="状态" width="90" align="center">
+          <template #default="{ row }">
+            <!-- 对象菜单的有效状态由关联对象控制，锁定展示 -->
+            <el-tooltip
+              v-if="row.menuType === 'OBJECT'"
+              content="状态由关联对象控制，请在对象管理中启用/停用"
+              placement="top"
+            >
+              <el-switch :model-value="effectiveStatus(row)" disabled />
+            </el-tooltip>
+            <el-switch
+              v-else
+              v-model="row.status"
+              :active-value="1"
+              :inactive-value="0"
+              @change="handleStatusChange(row)"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column label="显示" width="90" align="center">
+          <template #default="{ row }">
+            <el-switch
+              v-model="row.visible"
+              :active-value="1"
+              :inactive-value="0"
+              @change="handleVisibleChange(row)"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column prop="updatedAt" label="更新时间" width="170" />
+        <el-table-column label="操作" width="130" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
+            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
 
     <MenuFormDialog
       v-model="dialogVisible"
@@ -287,20 +295,21 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.search-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
+.cell-main {
+  font-weight: 500;
+  color: var(--oe-text-1);
 }
 
-.search-label {
-  font-size: 14px;
-  color: #606266;
+.cell-route {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .menu-icon {
-  margin-right: 6px;
+  margin-right: var(--oe-space-2);
+  color: var(--oe-text-3);
   vertical-align: -2px;
 }
 </style>
+

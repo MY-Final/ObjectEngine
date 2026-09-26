@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { Plus } from '@element-plus/icons-vue'
 import type { CustomField } from '@/types/field'
 import type { LayoutConfig, LayoutSection as LayoutSectionConfig, LayoutType } from '@/types/layout'
 import LayoutSection from './LayoutSection.vue'
@@ -63,50 +64,75 @@ function addSection() {
 
 <template>
   <div class="layout-editor">
-    <div v-for="(section, index) in config.sections" :key="section.id" class="editor-section">
-      <LayoutSection
-        :section="section"
-        :fields="enabledFields"
-        :unused-fields="unusedFields"
-        :is-first="index === 0"
-        :is-last="index === config.sections.length - 1"
-        @update="updateSection(index, $event)"
-        @remove="removeSection(index)"
-        @up="moveSection(index, -1)"
-        @down="moveSection(index, 1)"
+    <el-card shadow="never" class="layout-editor__card">
+      <template #header>
+        <div class="editor-header">
+          <span class="section-title">布局分组</span>
+          <span v-if="unusedFields.length > 0" class="unused-hint">
+            还有 {{ unusedFields.length }} 个未使用字段
+          </span>
+        </div>
+      </template>
+
+      <div v-for="(section, index) in config.sections" :key="section.id" class="editor-section">
+        <LayoutSection
+          :section="section"
+          :fields="enabledFields"
+          :unused-fields="unusedFields"
+          :is-first="index === 0"
+          :is-last="index === config.sections.length - 1"
+          @update="updateSection(index, $event)"
+          @remove="removeSection(index)"
+          @up="moveSection(index, -1)"
+          @down="moveSection(index, 1)"
+        />
+      </div>
+
+      <el-empty
+        v-if="config.sections.length === 0"
+        description="还没有分组，先添加一个 Section"
+        :image-size="64"
       />
-    </div>
 
-    <el-button class="add-section" @click="addSection">+ 添加 Section</el-button>
+      <el-button class="add-section" :icon="Plus" @click="addSection">添加 Section</el-button>
 
-    <div class="editor-footer">
-      <span v-if="unusedFields.length > 0" class="unused-hint">
-        还有 {{ unusedFields.length }} 个未使用字段（未加入布局的字段不会显示）
-      </span>
-      <el-button type="primary" :loading="saving" @click="emit('save')">保存布局</el-button>
-    </div>
+      <div class="editor-footer">
+        <span class="text-muted">未加入布局的字段不会显示在动态表单里</span>
+        <el-button type="primary" :loading="saving" @click="emit('save')">保存布局</el-button>
+      </div>
+    </el-card>
   </div>
 </template>
 
 <style scoped>
+.editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--oe-space-3);
+}
+
 .editor-section {
-  margin-bottom: 12px;
+  margin-bottom: var(--oe-space-3);
 }
 
 .add-section {
   width: 100%;
-  margin-bottom: 12px;
+  border-style: dashed;
 }
 
 .editor-footer {
   display: flex;
-  justify-content: flex-end;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
+  gap: var(--oe-space-3);
+  margin-top: var(--oe-space-4);
+  padding-top: var(--oe-space-4);
+  border-top: 1px solid var(--oe-border-soft);
 }
 
 .unused-hint {
-  font-size: 12px;
-  color: #e6a23c;
+  font-size: var(--el-font-size-extra-small);
+  color: var(--oe-warning);
 }
 </style>

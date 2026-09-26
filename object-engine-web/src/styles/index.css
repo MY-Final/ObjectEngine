@@ -1,0 +1,9 @@
+/**
+ * 全局样式入口。
+ * main.ts 里 Element Plus 的发行版 CSS 先加载，本文件后加载，因此这里的
+ * 变量与组件覆写优先级更高。顺序不要调换：tokens → base → element → utilities。
+ */
+@import './tokens.css';
+@import './base.css';
+@import './element.css';
+@import './utilities.css';

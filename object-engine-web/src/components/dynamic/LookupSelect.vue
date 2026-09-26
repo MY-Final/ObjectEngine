@@ -102,7 +102,7 @@ function handleChange(value: number | undefined) {
     :remote-method="handleSearch"
     :disabled="resolvingTarget || !targetApiName"
     :placeholder="targetApiName ? '输入关键字搜索记录' : '该字段未配置关联对象'"
-    style="width: 100%"
+    class="w-full"
     @change="handleChange"
     @clear="model = null"
   >

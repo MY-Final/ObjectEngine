@@ -43,5 +43,27 @@
 
 ## 样式
 
-- 全局主题调整走 CSS 变量 / Element Plus 主题定制，不要为组件库已有的功能重写一套样式。
-- `:deep(.el-xxx)` 覆写组件内部结构仅在确有必要时使用，并注明原因；页面级微调用 scoped style。
+样式分四层，全部在 `src/styles/`，由 `main.ts` 引入 `index.css`（顺序固定：tokens → base → element → utilities）：
+
+| 文件             | 放什么                                                                                             |
+| ---------------- | -------------------------------------------------------------------------------------------------- |
+| `tokens.css`     | 全站唯一的颜色 / 圆角 / 阴影 / 间距来源，先定义 `--oe-*` 语义变量，再映射给 Element Plus 的 `--el-*` |
+| `base.css`       | reset、页面底色、滚动条                                                                              |
+| `element.css`    | Element Plus 组件级微调，只写变量覆盖不了的部分（表格线取舍、卡片阴影层级、弹窗头尾分隔线）            |
+| `utilities.css`  | 页面级原语：`.page` / `.search-bar` / `.form-hint` / `.page-pagination` / `.table-card` / `.w-*`      |
+
+硬性约定：
+
+- **业务样式里不允许出现裸 hex**（`#909399`、`#606266`、`#f5f7fa` 之类），一律引用 `--oe-*` 语义 token。唯一允许出现字面量色的地方是 `tokens.css` 本身。这样换品牌色和切深色模式都只改一个文件，页面里写死颜色会在深色下穿帮。
+- **明暗主题只靠 `html.dark` 覆盖同一批 token**（见 `tokens.css`），不要为暗色单独写一套选择器。品牌面（首页横幅、登录页品牌面）刻意在两套主题下保持一致，相应 token 放在 `:root` 而不是 `html.dark`。
+- 主题状态在 `stores/app.ts`（`theme` / `isDark` / `initTheme` / `toggleTheme`），`main.ts` 挂载前调用 `initTheme()` 避免闪白。
+- `:deep(.el-xxx)` 覆写组件内部结构仅在确有必要时使用，并注明原因；页面级微调用 scoped style。当前仅侧边栏深色轨道用到（Element Plus 的 `.el-menu-item.is-active` 只设了 `color`，没有 `background`，不在 `--el-menu-*` 变量的可覆盖范围内）。
+
+## 页面骨架约定
+
+- 页面根容器用 `.page`，标题区用 `src/components/common/PageHeader.vue`（标题 + 描述 + `#actions` 插槽），不要各页手搓 `.page-toolbar`。
+- 列表页统一形态：`PageHeader` → `el-card.table-card.is-flush`（`#header` 放 `SearchBar`、`#footer` 放 `el-pagination`）→ 表格。`is-flush` 让表格与卡片边缘齐平。
+- 筛选条用 `SearchBar`（内部只组合 `el-*`），表单项下的说明文字用全局 `.form-hint` / `.form-error`。
+- 表格不加 `border` 属性（全网格观感过重），行悬停与表头底色已在 `element.css` 统一。
+- 表格里「主标题 + API 名称」这类两行信息，统一写成 `.cell-main` + `.text-api`。
+- 筛选控件宽度用 `.w-92` / `.w-110` / `.w-130` / `.w-160` / `.w-200` / `.w-220` / `.w-240` / `.w-full`，不要写内联 `style="width: 200px"`。

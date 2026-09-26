@@ -1,0 +1,93 @@
+/* 全局基础样式：reset、页面底色、滚动条 */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  background-color: var(--oe-bg);
+}
+
+body {
+  font-family: var(--oe-font-family);
+  font-size: var(--el-font-size-base);
+  line-height: var(--el-line-height-primary);
+  color: var(--oe-text-2);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* 深色模式下让浏览器原生控件（滚动条、日期选择器图标）也走暗色 */
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  color: var(--oe-text-1);
+  font-weight: 600;
+  /* 中文标题不做负字距，只收紧一点点，跟正文拉开层次 */
+  letter-spacing: -0.01em;
+}
+
+a {
+  color: var(--oe-brand-500);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--oe-brand-600);
+}
+
+/* 细滚动条：默认几乎不可见，悬停才显色 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--oe-border);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--oe-text-4);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-corner {
+  background-color: transparent;
+}
+
+/* 主题切换时不做全量动画，只让会变色的容器平滑过渡 */
+body,
+.app-aside,
+.app-header,
+.el-card,
+.el-table {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}

@@ -154,27 +154,35 @@ defineExpose({ refresh })
 
 <template>
   <div class="dynamic-object-list">
-    <DynamicFilter v-model="query" :fields="fields" @search="handleSearch" @reset="handleReset" />
-    <DynamicTable
-      :fields="fields"
-      :records="records"
-      :loading="listLoading"
-      :deleting-id="deletingId"
-      @edit="openEdit"
-      @delete="handleDelete"
-    />
-    <el-pagination
-      v-model:current-page="page"
-      v-model:page-size="pageSize"
-      class="list-pagination"
-      layout="total, sizes, prev, pager, next, jumper"
-      :page-sizes="[10, 20, 50]"
-      :total="total"
-      @size-change="handleSizeChange"
-      @current-change="handlePageChange"
-    />
+    <el-card shadow="never" class="table-card is-flush">
+      <template #header>
+        <DynamicFilter v-model="query" :fields="fields" @search="handleSearch" @reset="handleReset" />
+      </template>
 
-    <el-dialog v-model="editVisible" title="编辑记录" width="560px">
+      <DynamicTable
+        :fields="fields"
+        :records="records"
+        :loading="listLoading"
+        :deleting-id="deletingId"
+        @edit="openEdit"
+        @delete="handleDelete"
+      />
+
+      <template #footer>
+        <el-pagination
+          v-model:current-page="page"
+          v-model:page-size="pageSize"
+          class="page-pagination"
+          layout="total, sizes, prev, pager, next, jumper"
+          :page-sizes="[10, 20, 50]"
+          :total="total"
+          @size-change="handleSizeChange"
+          @current-change="handlePageChange"
+        />
+      </template>
+    </el-card>
+
+    <el-dialog v-model="editVisible" title="编辑记录" width="640px">
       <DynamicForm
         ref="editFormRef"
         v-model="editModel"
@@ -188,10 +196,3 @@ defineExpose({ refresh })
     </el-dialog>
   </div>
 </template>
-
-<style scoped>
-.list-pagination {
-  display: flex;
-  margin-top: 16px;
-}
-</style>

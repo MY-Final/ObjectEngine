@@ -160,7 +160,7 @@ async function handleSubmit() {
           v-model="form.parentId"
           :data="selectableParentOptions"
           :render-after-expand="false"
-          style="width: 100%"
+          class="w-full"
         />
       </el-form-item>
       <el-form-item label="菜单名称" prop="menuName">
@@ -181,7 +181,7 @@ async function handleSubmit() {
           allow-create
           default-first-option
           placeholder="选择或输入对象 API 名称"
-          style="width: 100%"
+          class="w-full"
         >
           <el-option
             v-for="object in objectOptions"
@@ -200,7 +200,7 @@ async function handleSubmit() {
         </div>
       </el-form-item>
       <el-form-item v-if="isLink" label="打开方式">
-        <el-select v-model="form.target" style="width: 100%">
+        <el-select v-model="form.target" class="w-full">
           <el-option label="当前窗口" value="_self" />
           <el-option label="新窗口" value="_blank" />
         </el-select>
@@ -252,12 +252,3 @@ async function handleSubmit() {
     </template>
   </el-dialog>
 </template>
-
-<style scoped>
-.form-hint {
-  width: 100%;
-  font-size: 12px;
-  color: #909399;
-  line-height: 1.6;
-}
-</style>

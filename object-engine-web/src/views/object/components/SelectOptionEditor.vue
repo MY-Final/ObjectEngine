@@ -31,28 +31,33 @@ function remove(index: number) {
 <style scoped>
 .select-option-editor {
   width: 100%;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 4px;
-  padding: 8px 10px;
+  padding: var(--oe-space-2) var(--oe-space-3);
+  border: 1px solid var(--oe-border-soft);
+  border-radius: var(--oe-radius-md);
+  background-color: var(--oe-surface-2);
 }
 
 .option-header {
   display: grid;
   grid-template-columns: 1fr 1fr 48px;
-  gap: 8px;
-  padding-bottom: 6px;
-  margin-bottom: 6px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-  font-size: 12px;
-  color: #909399;
+  gap: var(--oe-space-2);
+  padding-bottom: var(--oe-space-2);
+  margin-bottom: var(--oe-space-1);
+  border-bottom: 1px solid var(--oe-border-soft);
+  font-size: var(--el-font-size-extra-small);
+  color: var(--oe-text-3);
 }
 
 .option-row {
   display: grid;
   grid-template-columns: 1fr 1fr 48px;
-  gap: 8px;
   align-items: center;
-  margin-bottom: 8px;
+  gap: var(--oe-space-2);
+  margin-bottom: var(--oe-space-2);
+}
+
+.option-row:last-of-type {
+  margin-bottom: 0;
 }
 
 .option-add {

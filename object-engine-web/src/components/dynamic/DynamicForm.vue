@@ -28,7 +28,7 @@ const formRef = ref<FormInstance>()
 
 /** LOOKUP 变更后实时解析出的 REFERENCE 值（覆盖 displays） */
 const liveDisplays = ref<Record<string, unknown>>({})
-const mergedDisplays = computed(() => ({ ...(props.displays ?? {}), ...liveDisplays.value }))
+const mergedDisplays = computed(() => ({ ...props.displays, ...liveDisplays.value }))
 
 watch(
   () => props.displays,
@@ -180,15 +180,18 @@ defineExpose({ validate })
 </template>
 
 <style scoped>
-.dyn-section {
-  margin-bottom: 8px;
+.dyn-section + .dyn-section {
+  margin-top: var(--oe-space-5);
 }
 
 .dyn-section-title {
+  margin-bottom: var(--oe-space-3);
+  padding-left: var(--oe-space-3);
+  border-left: 3px solid var(--oe-brand-500);
+  border-radius: 0 2px 2px 0;
+  font-size: var(--el-font-size-base);
   font-weight: 600;
-  font-size: 14px;
-  margin-bottom: 12px;
-  padding-left: 8px;
-  border-left: 3px solid var(--el-color-primary);
+  color: var(--oe-text-1);
+  line-height: 1.3;
 }
 </style>

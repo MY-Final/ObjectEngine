@@ -1,0 +1,336 @@
+/**
+ * 设计 token —— 全站唯一的颜色 / 圆角 / 阴影 / 间距来源。
+ *
+ * 约定（见 agents/03-frontend-elementplus.md）：
+ * 1. 业务样式里不允许再出现裸 hex，一律引用本文件的语义 token；
+ * 2. 品牌色与中性色先定义成 --oe-* 语义变量，再映射给 Element Plus 的 --el-* 变量，
+ *    这样换肤只改本文件，深色模式也只在这里加一套 html.dark 覆盖。
+ */
+
+:root {
+  color-scheme: light;
+
+  /* —— 品牌色阶 —— */
+  --oe-brand-50: #eef4ff;
+  --oe-brand-100: #dbe7ff;
+  --oe-brand-200: #bdd3ff;
+  --oe-brand-300: #93b4ff;
+  --oe-brand-400: #6b91ff;
+  --oe-brand-500: #2f6bff;
+  --oe-brand-600: #2559d6;
+  --oe-brand-700: #1d47ab;
+
+  /* —— 文字 —— */
+  --oe-text-1: #0f172a;
+  --oe-text-2: #475569;
+  --oe-text-3: #94a3b8;
+  --oe-text-4: #cbd5e1;
+
+  /* —— 线条与底色 —— */
+  --oe-border: #e6eaf0;
+  --oe-border-soft: #eef1f6;
+  --oe-bg: #f5f7fb;
+  --oe-surface: #ffffff;
+  --oe-surface-2: #f8fafc;
+  --oe-surface-3: #f1f5f9;
+
+  /* —— 侧边栏深色轨道（亮色主题下也是深色）—— */
+  --oe-rail: #1c2431;
+  --oe-rail-2: #151b24;
+  --oe-rail-text: #a9b4c4;
+  --oe-rail-text-strong: #ffffff;
+  --oe-rail-hover: rgb(255 255 255 / 6%);
+  --oe-rail-active: rgb(255 255 255 / 11%);
+  --oe-rail-border: rgb(255 255 255 / 8%);
+  --oe-rail-input-bg: rgb(255 255 255 / 6%);
+
+  /* —— 语义色 —— */
+  --oe-success: #12b76a;
+  --oe-success-soft: #e7f8f0;
+  --oe-warning: #f79009;
+  --oe-warning-soft: #fef4e6;
+  --oe-danger: #f04438;
+  --oe-danger-soft: #feeceb;
+
+  /* —— 圆角 —— */
+  --oe-radius-sm: 6px;
+  --oe-radius-md: 8px;
+  --oe-radius-lg: 12px;
+  --oe-radius-xl: 16px;
+
+  /* —— 阴影（统一带一点品牌色倾向，比纯黑灰更干净）—— */
+  --oe-shadow-1: 0 1px 2px rgb(15 23 42 / 5%);
+  --oe-shadow-2: 0 4px 12px rgb(15 23 42 / 6%);
+  --oe-shadow-3: 0 12px 32px rgb(15 23 42 / 10%);
+  --oe-shadow-brand: 0 6px 16px rgb(47 107 255 / 22%);
+
+  /* —— 品牌面：首页横幅、登录页品牌面、品牌标识共用同一套渐变与前景色 ——
+   * 这三处刻意在明暗两套主题下保持一致（都是深底或品牌色底），所以不随 html.dark 变。 */
+  --oe-gradient-brand: linear-gradient(120deg, #2f6bff, #1d47ab 70%, #16307a);
+  --oe-gradient-panel: linear-gradient(160deg, #1a2333, #0d1422 62%, #101c33);
+  --oe-gradient-mark: linear-gradient(135deg, #6b91ff, #2559d6);
+  --oe-on-brand: #fff;
+  --oe-on-brand-soft: rgb(255 255 255 / 78%);
+  --oe-on-brand-muted: rgb(255 255 255 / 60%);
+  --oe-on-brand-faint: rgb(255 255 255 / 40%);
+  --oe-on-brand-glass: rgb(255 255 255 / 12%);
+  --oe-on-brand-line: rgb(255 255 255 / 24%);
+  --oe-on-brand-stripe: rgb(255 255 255 / 3%);
+
+  /* —— 间距 —— */
+  --oe-space-1: 4px;
+  --oe-space-2: 8px;
+  --oe-space-3: 12px;
+  --oe-space-4: 16px;
+  --oe-space-5: 20px;
+  --oe-space-6: 24px;
+  --oe-space-7: 32px;
+
+  /* —— 字体 —— */
+  --oe-font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --oe-font-mono: 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  /* —— 布局尺寸 —— */
+  --oe-header-height: 56px;
+  --oe-rail-width: 232px;
+  --oe-rail-width-collapsed: 64px;
+
+  /* =========================================================
+   * Element Plus 变量映射
+   * ========================================================= */
+
+  /* 品牌色：只覆盖主色阶，EP 默认的 light-1/2 用不到 */
+  --el-color-primary: var(--oe-brand-500);
+  --el-color-primary-light-3: var(--oe-brand-300);
+  --el-color-primary-light-5: var(--oe-brand-200);
+  --el-color-primary-light-7: var(--oe-brand-100);
+  --el-color-primary-light-8: #cadcff;
+  --el-color-primary-light-9: var(--oe-brand-50);
+  --el-color-primary-dark-2: var(--oe-brand-600);
+
+  /* 语义色：与 token 同源，深色下由 html.dark 一并改写 */
+  --el-color-success: var(--oe-success);
+  --el-color-success-light-3: #6ce9a6;
+  --el-color-success-light-5: #a3efc4;
+  --el-color-success-light-7: #cdf5de;
+  --el-color-success-light-8: #e2f9ec;
+  --el-color-success-light-9: var(--oe-success-soft);
+  --el-color-success-dark-2: #0e9c58;
+
+  --el-color-warning: var(--oe-warning);
+  --el-color-warning-light-3: #fbbd62;
+  --el-color-warning-light-5: #fcd08a;
+  --el-color-warning-light-7: #fde3b3;
+  --el-color-warning-light-8: #feebcc;
+  --el-color-warning-light-9: var(--oe-warning-soft);
+  --el-color-warning-dark-2: #d27605;
+
+  --el-color-danger: var(--oe-danger);
+  --el-color-danger-light-3: #fc8b83;
+  --el-color-danger-light-5: #fcaaa5;
+  --el-color-danger-light-7: #fdc9c6;
+  --el-color-danger-light-8: #fedcdb;
+  --el-color-danger-light-9: var(--oe-danger-soft);
+  --el-color-danger-dark-2: #d03629;
+  --el-color-error: var(--el-color-danger);
+  --el-color-error-light-3: var(--el-color-danger-light-3);
+  --el-color-error-light-5: var(--el-color-danger-light-5);
+  --el-color-error-light-7: var(--el-color-danger-light-7);
+  --el-color-error-light-8: var(--el-color-danger-light-8);
+  --el-color-error-light-9: var(--el-color-danger-light-9);
+  --el-color-error-dark-2: var(--el-color-danger-dark-2);
+
+  --el-color-info: var(--oe-text-3);
+  --el-color-info-light-3: #b6c0cf;
+  --el-color-info-light-5: #ccd4e0;
+  --el-color-info-light-7: #e2e8f0;
+  --el-color-info-light-8: #edf1f6;
+  --el-color-info-light-9: var(--oe-surface-2);
+  --el-color-info-dark-2: #6b7a90;
+
+  /* 文字 */
+  --el-text-color-primary: var(--oe-text-1);
+  --el-text-color-regular: var(--oe-text-2);
+  --el-text-color-secondary: var(--oe-text-3);
+  --el-text-color-placeholder: var(--oe-text-3);
+  --el-text-color-disabled: var(--oe-text-4);
+
+  /* 底色 */
+  --el-bg-color: var(--oe-surface);
+  --el-bg-color-page: var(--oe-bg);
+  --el-bg-color-overlay: var(--oe-surface);
+
+  /* 填充色：EP 默认偏灰，统一偏冷 */
+  --el-fill-color: var(--oe-surface-3);
+  --el-fill-color-light: var(--oe-surface-2);
+  --el-fill-color-lighter: var(--oe-surface-2);
+  --el-fill-color-extra-light: var(--oe-surface-2);
+  --el-fill-color-dark: var(--oe-border);
+  --el-fill-color-darker: var(--oe-text-4);
+  --el-fill-color-blank: var(--oe-surface);
+
+  /* 线条 */
+  --el-border-color: var(--oe-border);
+  --el-border-color-light: var(--oe-border);
+  --el-border-color-lighter: var(--oe-border-soft);
+  --el-border-color-extra-light: var(--oe-border-soft);
+  --el-border-color-dark: var(--oe-border);
+  --el-border-color-darker: var(--oe-text-4);
+  --el-border-color-hover: var(--oe-brand-300);
+
+  /* 圆角 */
+  --el-border-radius-base: var(--oe-radius-md);
+  --el-border-radius-small: var(--oe-radius-sm);
+  --el-border-radius-round: 999px;
+  --el-border-radius-circle: 100%;
+
+  /* 字号与行高 */
+  --el-font-size-extra-small: 12px;
+  --el-font-size-small: 13px;
+  --el-font-size-base: 14px;
+  --el-font-size-large: 15px;
+  --el-font-size-extra-large: 16px;
+  --el-font-size-primary-medium: 16px;
+  --el-font-size-extra-large-primary: 20px;
+  --el-font-family: var(--oe-font-family);
+  --el-line-height-primary: 1.6;
+
+  /* 阴影 */
+  --el-box-shadow: var(--oe-shadow-2);
+  --el-box-shadow-light: var(--oe-shadow-1);
+  --el-box-shadow-lighter: var(--oe-shadow-1);
+  --el-box-shadow-dark: var(--oe-shadow-3);
+
+  /* 禁用态 */
+  --el-disabled-bg-color: var(--oe-surface-3);
+  --el-disabled-text-color: var(--oe-text-4);
+  --el-disabled-border-color: var(--oe-border);
+
+  /* 遮罩 */
+  --el-mask-color: rgb(15 23 42 / 45%);
+  --el-mask-color-extra-light: rgb(15 23 42 / 20%);
+
+  /* 表格：去网格线的关键在这里 —— 只留横向发丝线，表头压浅底 */
+  --el-table-border-color: var(--oe-border-soft);
+  --el-table-border: 1px solid var(--oe-border-soft);
+  --el-table-text-color: var(--oe-text-2);
+  --el-table-header-text-color: var(--oe-text-3);
+  --el-table-bg-color: var(--oe-surface);
+  --el-table-tr-bg-color: var(--oe-surface);
+  --el-table-header-bg-color: var(--oe-surface-2);
+  --el-table-row-hover-bg-color: var(--oe-brand-50);
+  --el-table-current-row-bg-color: var(--oe-brand-50);
+  --el-table-expanded-cell-bg-color: var(--oe-surface-2);
+
+  /* 卡片 */
+  --el-card-bg-color: var(--oe-surface);
+  --el-card-border-color: var(--oe-border);
+  --el-card-border-radius: var(--oe-radius-lg);
+  --el-card-padding: var(--oe-space-5);
+
+  /* 弹层 */
+  --el-box-shadow-light-popper: var(--oe-shadow-2);
+  --el-border-radius: var(--oe-radius-md);
+
+  /* 菜单：由侧边栏深色轨道在 .oe-rail 上局部改写 */
+  --el-menu-item-height: 42px;
+  --el-menu-sub-item-height: 40px;
+  --el-menu-base-level-padding: var(--oe-space-3);
+  --el-menu-level-padding: 14px;
+  --el-menu-item-font-size: var(--el-font-size-base);
+  --el-menu-icon-width: 18px;
+  --el-menu-active-color: var(--oe-brand-500);
+  --el-menu-hover-text-color: var(--oe-brand-500);
+}
+
+/* =========================================================
+ * 深色模式：只改 token，Element Plus 变量自动跟随
+ * ========================================================= */
+html.dark {
+  color-scheme: dark;
+
+  --oe-brand-50: #16233d;
+  --oe-brand-100: #1b2c4c;
+  --oe-brand-200: #213763;
+  --oe-brand-300: #2f4d8f;
+  --oe-brand-400: #3d68c9;
+  --oe-brand-500: #5b8def;
+  --oe-brand-600: #7aa5f5;
+  --oe-brand-700: #a3c2fa;
+
+  --oe-text-1: #e8eef8;
+  --oe-text-2: #a8b4c8;
+  --oe-text-3: #7a879d;
+  --oe-text-4: #556074;
+
+  --oe-border: #2c3850;
+  --oe-border-soft: #222c3d;
+  --oe-bg: #0d1524;
+  --oe-surface: #172033;
+  --oe-surface-2: #1d2739;
+  --oe-surface-3: #243044;
+
+  --oe-rail: #0b1220;
+  --oe-rail-2: #070c16;
+  --oe-rail-text: #8492a8;
+  --oe-rail-text-strong: #ffffff;
+  --oe-rail-hover: rgb(255 255 255 / 6%);
+  --oe-rail-active: rgb(255 255 255 / 12%);
+  --oe-rail-border: rgb(255 255 255 / 7%);
+  --oe-rail-input-bg: rgb(255 255 255 / 5%);
+
+  --oe-success: #34d399;
+  --oe-success-soft: #10281f;
+  --oe-warning: #fbbf24;
+  --oe-warning-soft: #2b2010;
+  --oe-danger: #f87171;
+  --oe-danger-soft: #2d1618;
+
+  --oe-shadow-1: 0 1px 2px rgb(0 0 0 / 30%);
+  --oe-shadow-2: 0 4px 12px rgb(0 0 0 / 36%);
+  --oe-shadow-3: 0 12px 32px rgb(0 0 0 / 48%);
+  --oe-shadow-brand: 0 6px 16px rgb(91 141 239 / 26%);
+
+  --oe-gradient-brand: linear-gradient(120deg, #5b8def, #1d47ab 70%, #16307a);
+  --oe-gradient-panel: linear-gradient(160deg, #131b29, #080d16 62%, #0b1526);
+
+  --el-color-primary: var(--oe-brand-500);
+  --el-color-primary-light-3: #2f4d8f;
+  --el-color-primary-light-5: #26395f;
+  --el-color-primary-light-7: #1d2a45;
+  --el-color-primary-light-8: #1a2439;
+  --el-color-primary-light-9: #16202f;
+  --el-color-primary-dark-2: #7aa5f5;
+
+  --el-color-success-light-3: #1c5f45;
+  --el-color-success-light-5: #17462f;
+  --el-color-success-light-7: #123324;
+  --el-color-success-light-8: #102a1e;
+  --el-color-warning-light-3: #6b4a12;
+  --el-color-warning-light-5: #503810;
+  --el-color-warning-light-7: #3a2a0d;
+  --el-color-warning-light-8: #2c200b;
+  --el-color-danger-light-3: #7a2f2c;
+  --el-color-danger-light-5: #5c2422;
+  --el-color-danger-light-7: #451c1b;
+  --el-color-danger-light-8: #351615;
+  --el-color-info: var(--oe-text-3);
+  --el-color-info-light-3: #3a4657;
+  --el-color-info-light-5: #303a4a;
+  --el-color-info-light-7: #262f3d;
+  --el-color-info-light-8: #202836;
+  --el-color-info-light-9: #1b2230;
+  --el-color-info-dark-2: var(--oe-text-2);
+
+  --el-mask-color: rgb(0 0 0 / 60%);
+  --el-mask-color-extra-light: rgb(0 0 0 / 30%);
+
+  --el-table-header-bg-color: var(--oe-surface-2);
+  --el-table-row-hover-bg-color: #1a2740;
+  --el-table-current-row-bg-color: #1a2740;
+
+  --el-card-bg-color: var(--oe-surface);
+  --el-card-border-color: var(--oe-border);
+}

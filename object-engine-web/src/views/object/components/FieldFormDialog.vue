@@ -490,7 +490,7 @@ async function handleSubmit() {
         <el-input v-model="form.fieldName" placeholder="例如：项目名称" />
       </el-form-item>
       <el-form-item label="字段类型" prop="fieldType">
-        <el-select v-model="form.fieldType" :disabled="isEdit" style="width: 100%">
+        <el-select v-model="form.fieldType" :disabled="isEdit" class="w-full">
           <el-option
             v-for="option in FIELD_TYPE_OPTIONS"
             :key="option.value"
@@ -509,7 +509,7 @@ async function handleSubmit() {
           <div class="form-hint">格式预览：{{ autoNumberExample }}</div>
         </el-form-item>
         <el-form-item label="起始编号">
-          <el-input-number v-model="autoNumberStart" :min="1" controls-position="right" style="width: 100%" />
+          <el-input-number v-model="autoNumberStart" :min="1" controls-position="right" class="w-full" />
           <div class="form-hint">首条记录使用的序号，仅创建字段时生效</div>
         </el-form-item>
       </template>
@@ -520,7 +520,7 @@ async function handleSubmit() {
             filterable
             :disabled="isEdit"
             placeholder="选择要关联的业务对象"
-            style="width: 100%"
+            class="w-full"
           >
             <el-option
               v-for="object in enabledObjects"
@@ -529,7 +529,7 @@ async function handleSubmit() {
               :value="object.id"
             />
           </el-select>
-          <div v-if="lookupError" class="options-error">{{ lookupError }}</div>
+          <div v-if="lookupError" class="form-error">{{ lookupError }}</div>
           <div v-else-if="isEdit" class="form-hint">关联对象创建后不可修改</div>
           <div v-else class="form-hint">表单中将可搜索并关联该对象的数据记录，列表展示记录名称</div>
         </el-form-item>
@@ -541,7 +541,7 @@ async function handleSubmit() {
             filterable
             :disabled="isEdit"
             placeholder="选择本对象的关联字段"
-            style="width: 100%"
+            class="w-full"
             @change="handleRelationFieldChange"
           >
             <el-option
@@ -552,7 +552,7 @@ async function handleSubmit() {
             />
           </el-select>
           <div v-if="isEdit" class="form-hint">关联关系创建后不可修改</div>
-          <div v-else-if="currentLookupFields.length === 0" class="form-hint warning-text">
+          <div v-else-if="currentLookupFields.length === 0" class="form-hint is-warning">
             本对象还没有「关联关系」字段，请先创建
           </div>
         </el-form-item>
@@ -562,7 +562,7 @@ async function handleSubmit() {
             filterable
             :disabled="isEdit"
             :placeholder="targetFields.length ? '选择要引用的字段' : '请先选择关联关系'"
-            style="width: 100%"
+            class="w-full"
           >
             <el-option
               v-for="field in targetFields"
@@ -571,7 +571,7 @@ async function handleSubmit() {
               :value="field.id"
             />
           </el-select>
-          <div v-if="referenceError" class="options-error">{{ referenceError }}</div>
+          <div v-if="referenceError" class="form-error">{{ referenceError }}</div>
           <div v-else class="form-hint">表单与列表将展示关联记录中该字段的值，由系统自动计算</div>
         </el-form-item>
       </template>
@@ -583,7 +583,7 @@ async function handleSubmit() {
             :max="5000"
             controls-position="right"
             placeholder="不填则不限制"
-            style="width: 100%"
+            class="w-full"
           />
         </el-form-item>
         <el-form-item label="最小长度">
@@ -592,7 +592,7 @@ async function handleSubmit() {
             :min="0"
             controls-position="right"
             placeholder="不填则不限制"
-            style="width: 100%"
+            class="w-full"
           />
         </el-form-item>
       </template>
@@ -604,7 +604,7 @@ async function handleSubmit() {
             :max="15"
             controls-position="right"
             placeholder="不填则不限制"
-            style="width: 100%"
+            class="w-full"
           />
         </el-form-item>
         <el-form-item label="小数位数">
@@ -614,7 +614,7 @@ async function handleSubmit() {
             :max="6"
             controls-position="right"
             :placeholder="form.fieldType === 'MONEY' ? '默认 2 位' : '不填则不限制'"
-            style="width: 100%"
+            class="w-full"
           />
         </el-form-item>
       </template>
@@ -646,7 +646,7 @@ async function handleSubmit() {
           v-else-if="form.fieldType === 'NUMBER' || form.fieldType === 'MONEY' || form.fieldType === 'PERCENT'"
           v-model="numberDefaultValue"
           :controls="false"
-          style="width: 100%"
+          class="w-full"
         />
         <el-date-picker
           v-else-if="form.fieldType === 'DATE'"
@@ -654,14 +654,14 @@ async function handleSubmit() {
           type="date"
           value-format="YYYY-MM-DD"
           placeholder="默认日期（可选）"
-          style="width: 100%"
+          class="w-full"
         />
         <el-time-picker
           v-else-if="form.fieldType === 'TIME'"
           v-model="form.defaultValue"
           value-format="HH:mm:ss"
           placeholder="默认时间（可选）"
-          style="width: 100%"
+          class="w-full"
         />
         <span v-else-if="form.fieldType === 'REFERENCE' || form.fieldType === 'LOOKUP'" class="form-hint">关联/引用字段不支持默认值</span>
         <span v-else-if="form.fieldType === 'AUTO_NUMBER'" class="form-hint">保存后由系统按格式自动生成，无需填写</span>
@@ -682,7 +682,7 @@ async function handleSubmit() {
               v-model="optionSetId"
               filterable
               placeholder="选择通用选项集"
-              style="width: 100%"
+              class="w-full"
             >
               <el-option
                 v-for="set in enabledSets"
@@ -691,7 +691,7 @@ async function handleSubmit() {
                 :value="set.id"
               />
             </el-select>
-            <div v-if="optionSetError" class="options-error">{{ optionSetError }}</div>
+            <div v-if="optionSetError" class="form-error">{{ optionSetError }}</div>
             <div v-else-if="globalOptions.length" class="form-hint">
               当前选项：{{ globalOptions.map((option) => option.label).join('、') }}
             </div>
@@ -702,7 +702,7 @@ async function handleSubmit() {
       <el-form-item v-if="isOptionType && optionSource === 'LOCAL'" label="选项配置">
         <div class="options-editor">
           <SelectOptionEditor v-model="options" />
-          <div v-if="optionsError" class="options-error">{{ optionsError }}</div>
+          <div v-if="optionsError" class="form-error">{{ optionsError }}</div>
         </div>
       </el-form-item>
       <el-form-item v-if="isEdit" label="状态">
@@ -726,22 +726,9 @@ async function handleSubmit() {
 </template>
 
 <style scoped>
-.form-hint {
-  font-size: 12px;
-  color: #909399;
-}
+/* .form-hint 已提升为全局类，这里只补本弹窗特有的宽度与颜色 */
 
 .options-editor {
   width: 100%;
-}
-
-.options-error {
-  margin-top: 4px;
-  font-size: 12px;
-  color: #f56c6c;
-}
-
-.warning-text {
-  color: #e6a23c;
 }
 </style>

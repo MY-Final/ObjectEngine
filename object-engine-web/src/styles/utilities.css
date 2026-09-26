@@ -1,0 +1,143 @@
+/**
+ * 全局布局与页面原语。
+ *
+ * 这些类此前散落在各页面的 scoped style 里逐字重复
+ * （.search-bar 4 处、.form-hint 5 处、.page-pagination 全局与 scoped 冲突），
+ * 统一提升到这里，页面 scoped style 只留真正页面级的一点点微调。
+ */
+
+/* —— 页面容器 —— */
+.page {
+  padding: var(--oe-space-5) var(--oe-space-6);
+  min-height: 100%;
+}
+
+.page-loading {
+  height: 240px;
+}
+
+/* —— 搜索 / 筛选条 —— */
+.search-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--oe-space-2);
+}
+
+.search-label {
+  font-size: var(--el-font-size-base);
+  color: var(--oe-text-2);
+  white-space: nowrap;
+}
+
+/* —— 分页：右对齐，只保留这一处定义 —— */
+.page-pagination {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--oe-space-4);
+}
+
+/* —— 表单里的辅助说明文字 —— */
+.form-hint {
+  width: 100%;
+  font-size: var(--el-font-size-extra-small);
+  line-height: 1.6;
+  color: var(--oe-text-3);
+}
+
+.form-hint.is-warning {
+  color: var(--oe-warning);
+}
+
+.form-error {
+  width: 100%;
+  margin-top: var(--oe-space-1);
+  font-size: var(--el-font-size-extra-small);
+  color: var(--el-color-danger);
+}
+
+/* —— 列表卡片：表格与卡片边缘齐平，是列表页的标准形态 ——
+ * 用法：<el-card class="table-card is-flush"> + #header(搜索条) + 表格 + #footer(分页) */
+.table-card {
+  margin-top: var(--oe-space-4);
+}
+
+.table-card.is-flush > .el-card__body {
+  padding: 0;
+}
+
+.table-card .el-table {
+  border-radius: 0;
+}
+
+.table-card .el-card__footer {
+  padding: var(--oe-space-3) var(--oe-space-4);
+  border-top: 1px solid var(--oe-border-soft);
+}
+
+/* 分页在卡片 footer 里时不需要再往上留间距 */
+.table-card .el-card__footer .page-pagination {
+  margin-top: 0;
+}
+
+/* —— 页面内区块小标题 —— */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--oe-space-2);
+  font-size: var(--el-font-size-large);
+  font-weight: 600;
+  color: var(--oe-text-1);
+}
+
+/* —— 表格里的次要说明文字 —— */
+.text-muted {
+  font-size: var(--el-font-size-small);
+  color: var(--oe-text-3);
+}
+
+.text-api {
+  font-family: var(--oe-font-mono);
+  font-size: var(--el-font-size-small);
+  color: var(--oe-text-3);
+}
+
+/* —— 筛选控件宽度：避免每个 el-input 都写一遍 style="width: 200px" —— */
+.w-92 {
+  width: 92px;
+}
+
+.w-110 {
+  width: 110px;
+}
+
+.w-130 {
+  width: 130px;
+}
+
+.w-160 {
+  width: 160px;
+}
+
+.w-200 {
+  width: 200px;
+}
+
+.w-220 {
+  width: 220px;
+}
+
+.w-240 {
+  width: 240px;
+}
+
+.w-full {
+  width: 100%;
+}
+
+/* —— 窄屏兜底：侧栏折叠后给内容留出最小可用宽度 —— */
+@media (width <= 768px) {
+  .page {
+    padding: var(--oe-space-4) var(--oe-space-3);
+  }
+}

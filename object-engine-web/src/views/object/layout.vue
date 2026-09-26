@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { ArrowLeft } from '@element-plus/icons-vue'
 import { listFields } from '@/api/field'
 import { getObject } from '@/api/object'
 import { getLayout, saveLayout } from '@/api/layout'
@@ -15,6 +16,7 @@ import {
 } from '@/utils/layout'
 import LayoutEditor from '@/components/layout/LayoutEditor.vue'
 import LayoutPreview from '@/components/layout/LayoutPreview.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -105,43 +107,48 @@ onMounted(async () => {
 
 <template>
   <div class="page" v-loading="loading">
-    <div class="page-toolbar">
-      <h2>
-        布局配置
-        <span class="layout-subtitle">
-          对象：{{ objectName || apiName }} / API：{{ apiName }}
-        </span>
-      </h2>
-      <el-button @click="router.push(`/admin/objects/${apiName}`)">返回对象</el-button>
-    </div>
+    <PageHeader
+      title="布局配置"
+      :description="`对象：${objectName || apiName} / API：${apiName}`"
+    >
+      <template #actions>
+        <el-button :icon="ArrowLeft" @click="router.push(`/admin/objects/${apiName}`)">
+          返回对象
+        </el-button>
+      </template>
+    </PageHeader>
 
-    <el-tabs v-model="activeTab" @tab-change="handleTabChange">
-      <el-tab-pane label="前台布局" name="FRONTEND" />
-      <el-tab-pane label="后台布局" name="BACKEND" />
-    </el-tabs>
+    <el-card shadow="never" class="layout-card">
+      <el-tabs v-model="activeTab" class="layout-tabs" @tab-change="handleTabChange">
+        <el-tab-pane label="前台布局" name="FRONTEND" />
+        <el-tab-pane label="后台布局" name="BACKEND" />
+      </el-tabs>
 
-    <el-row :gutter="16">
-      <el-col :span="12">
-        <LayoutEditor
-          v-model="config"
-          :fields="fields"
-          :layout-type="activeTab"
-          :saving="saving"
-          @save="handleSave"
-        />
-      </el-col>
-      <el-col :span="12">
-        <LayoutPreview :fields="enabledFields" :layout="config" />
-      </el-col>
-    </el-row>
+      <el-row :gutter="16">
+        <!-- 编辑器控件较多，给它多一点宽度；预览区在 lg 以下换行到下一行 -->
+        <el-col :xs="24" :xl="13" :lg="24">
+          <LayoutEditor
+            v-model="config"
+            :fields="fields"
+            :layout-type="activeTab"
+            :saving="saving"
+            @save="handleSave"
+          />
+        </el-col>
+        <el-col :xs="24" :xl="11" :lg="24">
+          <LayoutPreview :fields="enabledFields" :layout="config" />
+        </el-col>
+      </el-row>
+    </el-card>
   </div>
 </template>
 
 <style scoped>
-.layout-subtitle {
-  margin-left: 12px;
-  font-size: 13px;
-  font-weight: normal;
-  color: #909399;
+.layout-card :deep(.el-card__body) {
+  padding: var(--oe-space-3) var(--oe-space-5) var(--oe-space-5);
+}
+
+.layout-tabs :deep(.el-tabs__header) {
+  margin-bottom: var(--oe-space-4);
 }
 </style>

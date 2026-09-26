@@ -40,7 +40,10 @@ watch(
 <template>
   <el-card shadow="never">
     <template #header>
-      <span>Layout 预览</span>
+      <div class="preview-header">
+        <span class="section-title">布局预览</span>
+        <span class="text-muted">与前台动态页面渲染一致</span>
+      </div>
     </template>
     <div class="layout-preview">
       <DynamicForm v-model="previewModel" :fields="fields" :layout="layout" />
@@ -49,9 +52,16 @@ watch(
 </template>
 
 <style scoped>
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--oe-space-3);
+}
+
 .layout-preview {
   max-height: 60vh;
+  padding: var(--oe-space-1) var(--oe-space-2);
   overflow: auto;
-  padding: 4px;
 }
 </style>
